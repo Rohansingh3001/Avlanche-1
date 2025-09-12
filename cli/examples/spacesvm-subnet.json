@@ -1,0 +1,41 @@
+{
+  "subnetName": "storage-spacesvm",
+  "description": "Key-value storage subnet using SpacesVM",
+  "vmType": "SpacesVM",
+  "chainId": 33333,
+  "validators": [
+    {
+      "nodeId": "NodeID-BFa1paRxVF3SKGg5zrRHZB8Hp4hsm5kQG",
+      "weight": 100,
+      "startTime": "2024-01-01T00:00:00Z",
+      "endTime": "2025-01-01T00:00:00Z"
+    }
+  ],
+  "spacesConfig": {
+    "maxKeySize": 1024,
+    "maxValueSize": 1048576,
+    "maxProposalSize": 2097152,
+    "baseUnits": 1,
+    "valueUnits": 5,
+    "keyUnits": 5
+  },
+  "genesis": {
+    "magic": 1347,
+    "blockCostEnabled": true,
+    "baseCost": 1024,
+    "valueStoreCostPerByte": 1,
+    "keyStoreCostPerByte": 1,
+    "customAllocation": [
+      {
+        "address": "spaces1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqnrql35",
+        "balance": 10000000000
+      }
+    ]
+  },
+  "deployment": {
+    "network": "fuji",
+    "outputDir": "./spaces-subnet-output",
+    "generateScripts": true,
+    "enableAPI": true
+  }
+}

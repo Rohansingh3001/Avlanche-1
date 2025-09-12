@@ -1,0 +1,25 @@
+{
+  "name": "avalanche-subnet-cli",
+  "version": "1.0.0",
+  "description": "Interactive CLI wizard for Avalanche subnet creation",
+  "main": "subnet-wizard.js",
+  "bin": {
+    "subnet-wizard": "./subnet-wizard.js"
+  },
+  "scripts": {
+    "start": "node subnet-wizard.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "inquirer": "^9.2.7",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "fs-extra": "^11.1.1",
+    "yargs": "^17.7.2",
+    "axios": "^1.4.0",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0"
+  }
+}

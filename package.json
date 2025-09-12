@@ -1,0 +1,40 @@
+{
+  "name": "avalanche-subnet-tooling-suite",
+  "version": "1.0.0",
+  "description": "A unified tooling suite for creating, deploying, and managing Avalanche subnets",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm run dev",
+    "frontend": "cd frontend && npm start",
+    "build": "cd frontend && npm run build",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../cli && npm install",
+    "wizard": "node cli/subnet-wizard.js",
+    "deploy:local": "bash scripts/deploy-local.sh",
+    "setup": "node scripts/setup.js"
+  },
+  "keywords": [
+    "avalanche",
+    "subnet",
+    "blockchain",
+    "ethereum",
+    "web3",
+    "defi"
+  ],
+  "author": "Avalanche Subnet Tooling Suite",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.6.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/avalanche-subnet-tooling"
+  }
+}

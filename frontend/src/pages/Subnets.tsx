@@ -1,0 +1,461 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Chip,
+  Avatar,
+  IconButton,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  LinearProgress,
+  Fab,
+  Tooltip,
+  useTheme,
+  alpha,
+  Skeleton,
+} from '@mui/material';
+import {
+  Add as AddIcon,
+  MoreVert as MoreVertIcon,
+  PlayArrow as PlayIcon,
+  Stop as StopIcon,
+  Settings as SettingsIcon,
+  Visibility as ViewIcon,
+  Delete as DeleteIcon,
+  Edit as EditIcon,
+  Cloud as CloudIcon,
+  Storage as StorageIcon,
+  Speed as SpeedIcon,
+  Security as SecurityIcon,
+  Group as GroupIcon,
+  TrendingUp as TrendingUpIcon,
+} from '@mui/icons-material';
+import CreateSubnetModal from '../components/CreateSubnetModal';
+import { useNotification } from '../components/NotificationProvider';
+
+interface Subnet {
+  id: string;
+  name: string;
+  description: string;
+  chainId: number;
+  vmType: string;
+  status: 'running' | 'stopped' | 'pending' | 'error';
+  network: string;
+  validators: number;
+  blockTime: number;
+  gasLimit: number;
+  tokenSymbol: string;
+  tokenName: string;
+  createdAt: string;
+  lastActivity: string;
+  transactions: number;
+  blocks: number;
+}
+
+const Subnets: React.FC = () => {
+  const theme = useTheme();
+  const { showNotification } = useNotification();
+  const [subnets, setSubnets] = useState<Subnet[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [selectedSubnet, setSelectedSubnet] = useState<Subnet | null>(null);
+  const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
+  // Mock data for demonstration
+  useEffect(() => {
+    const fetchSubnets = async () => {
+      setLoading(true);
+      try {
+        // Replace with actual API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const mockSubnets: Subnet[] = [
+          {
+            id: '1',
+            name: 'DeFi Subnet',
+            description: 'Decentralized Finance applications subnet',
+            chainId: 12345,
+            vmType: 'EVM',
+            status: 'running',
+            network: 'fuji',
+            validators: 5,
+            blockTime: 2,
+            gasLimit: 8000000,
+            tokenSymbol: 'DEFI',
+            tokenName: 'DeFi Token',
+            createdAt: '2024-01-15',
+            lastActivity: '2 minutes ago',
+            transactions: 15420,
+            blocks: 8932,
+          },
+          {
+            id: '2',
+            name: 'Gaming Subnet',
+            description: 'High-performance gaming subnet',
+            chainId: 54321,
+            vmType: 'EVM',
+            status: 'stopped',
+            network: 'mainnet',
+            validators: 3,
+            blockTime: 1,
+            gasLimit: 15000000,
+            tokenSymbol: 'GAME',
+            tokenName: 'Gaming Token',
+            createdAt: '2024-02-01',
+            lastActivity: '1 hour ago',
+            transactions: 8750,
+            blocks: 4521,
+          },
+        ];
+        
+        setSubnets(mockSubnets);
+      } catch (error) {
+        showNotification('Failed to fetch subnets', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSubnets();
+  }, [showNotification]);
+
+  const handleActionMenuClick = (event: React.MouseEvent<HTMLElement>, subnet: Subnet) => {
+    setActionMenuAnchor(event.currentTarget);
+    setSelectedSubnet(subnet);
+  };
+
+  const handleActionMenuClose = () => {
+    setActionMenuAnchor(null);
+    setSelectedSubnet(null);
+  };
+
+  const handleStartStop = async (subnet: Subnet) => {
+    const action = subnet.status === 'running' ? 'stop' : 'start';
+    try {
+      // Replace with actual API call
+      showNotification(`${action === 'start' ? 'Starting' : 'Stopping'} subnet "${subnet.name}"...`, 'info');
+      
+      // Update local state
+      setSubnets(prev => prev.map(s => 
+        s.id === subnet.id 
+          ? { ...s, status: action === 'start' ? 'running' : 'stopped' }
+          : s
+      ));
+      
+      showNotification(`Subnet "${subnet.name}" ${action}ed successfully`, 'success');
+    } catch (error) {
+      showNotification(`Failed to ${action} subnet`, 'error');
+    }
+    handleActionMenuClose();
+  };
+
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+    handleActionMenuClose();
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedSubnet) return;
+    
+    try {
+      // Replace with actual API call
+      setSubnets(prev => prev.filter(s => s.id !== selectedSubnet.id));
+      showNotification(`Subnet "${selectedSubnet.name}" deleted successfully`, 'success');
+    } catch (error) {
+      showNotification('Failed to delete subnet', 'error');
+    }
+    
+    setDeleteDialogOpen(false);
+    setSelectedSubnet(null);
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'running': return theme.palette.success.main;
+      case 'stopped': return theme.palette.error.main;
+      case 'pending': return theme.palette.warning.main;
+      case 'error': return theme.palette.error.main;
+      default: return theme.palette.grey[500];
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'running': return <PlayIcon />;
+      case 'stopped': return <StopIcon />;
+      case 'pending': return <SpeedIcon />;
+      case 'error': return <SecurityIcon />;
+      default: return <CloudIcon />;
+    }
+  };
+
+  return (
+    <Container maxWidth="xl" sx={{ py: 4 }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography
+          variant="h3"
+          sx={{
+            fontWeight: 700,
+            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+            backgroundClip: 'text',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            mb: 1,
+          }}
+        >
+          Subnets
+        </Typography>
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
+          Manage your Avalanche subnets
+        </Typography>
+
+        <Button
+          variant="contained"
+          size="large"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateModalOpen(true)}
+          sx={{
+            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+            py: 1.5,
+            px: 4,
+          }}
+        >
+          Create New Subnet
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Grid container spacing={3}>
+          {[1, 2, 3].map((item) => (
+            <Grid item xs={12} md={6} lg={4} key={item}>
+              <Card>
+                <CardContent>
+                  <Skeleton variant="text" width="60%" height={32} />
+                  <Skeleton variant="text" width="80%" />
+                  <Skeleton variant="rectangular" width="100%" height={60} sx={{ mt: 2 }} />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : subnets.length === 0 ? (
+        <Card>
+          <CardContent sx={{ textAlign: 'center', py: 8 }}>
+            <CloudIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
+            <Typography variant="h5" gutterBottom>
+              No Subnets Yet
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Create your first subnet to get started with Avalanche development
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setCreateModalOpen(true)}
+            >
+              Create Your First Subnet
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={3}>
+          {subnets.map((subnet) => (
+            <Grid item xs={12} md={6} lg={4} key={subnet.id}>
+              <Card
+                sx={{
+                  background: `linear-gradient(135deg, 
+                    ${alpha(theme.palette.background.paper, 0.95)} 0%, 
+                    ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
+                  backdropFilter: 'blur(20px)',
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: theme.shadows[8],
+                  },
+                }}
+              >
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: getStatusColor(subnet.status),
+                        mr: 2,
+                      }}
+                    >
+                      {getStatusIcon(subnet.status)}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" gutterBottom>
+                        {subnet.name}
+                      </Typography>
+                      <Chip
+                        label={subnet.status}
+                        size="small"
+                        sx={{
+                          bgcolor: alpha(getStatusColor(subnet.status), 0.1),
+                          color: getStatusColor(subnet.status),
+                        }}
+                      />
+                    </Box>
+                    <IconButton
+                      onClick={(e) => handleActionMenuClick(e, subnet)}
+                    >
+                      <MoreVertIcon />
+                    </IconButton>
+                  </Box>
+
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    {subnet.description}
+                  </Typography>
+
+                  <Grid container spacing={2} sx={{ mb: 2 }}>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <StorageIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="caption" color="text.secondary">
+                          Chain ID: {subnet.chainId}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <GroupIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="caption" color="text.secondary">
+                          Validators: {subnet.validators}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <SpeedIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="caption" color="text.secondary">
+                          Block Time: {subnet.blockTime}s
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <TrendingUpIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                        <Typography variant="caption" color="text.secondary">
+                          TXs: {subnet.transactions.toLocaleString()}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  <Typography variant="caption" color="text.secondary">
+                    Last activity: {subnet.lastActivity}
+                  </Typography>
+                </CardContent>
+
+                <CardActions>
+                  <Button
+                    size="small"
+                    startIcon={<ViewIcon />}
+                    onClick={() => {/* Navigate to subnet details */}}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    size="small"
+                    startIcon={subnet.status === 'running' ? <StopIcon /> : <PlayIcon />}
+                    onClick={() => handleStartStop(subnet)}
+                    color={subnet.status === 'running' ? 'error' : 'success'}
+                  >
+                    {subnet.status === 'running' ? 'Stop' : 'Start'}
+                  </Button>
+                </CardActions>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
+
+      {/* Floating Action Button */}
+      <Tooltip title="Create New Subnet">
+        <Fab
+          color="primary"
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+          }}
+          onClick={() => setCreateModalOpen(true)}
+        >
+          <AddIcon />
+        </Fab>
+      </Tooltip>
+
+      {/* Action Menu */}
+      <Menu
+        anchorEl={actionMenuAnchor}
+        open={Boolean(actionMenuAnchor)}
+        onClose={handleActionMenuClose}
+      >
+        <MenuItem onClick={() => {/* Navigate to subnet details */}}>
+          <ViewIcon sx={{ mr: 1 }} />
+          View Details
+        </MenuItem>
+        <MenuItem onClick={() => {/* Navigate to subnet settings */}}>
+          <EditIcon sx={{ mr: 1 }} />
+          Edit Settings
+        </MenuItem>
+        <MenuItem onClick={() => selectedSubnet && handleStartStop(selectedSubnet)}>
+          {selectedSubnet?.status === 'running' ? <StopIcon sx={{ mr: 1 }} /> : <PlayIcon sx={{ mr: 1 }} />}
+          {selectedSubnet?.status === 'running' ? 'Stop' : 'Start'}
+        </MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
+          <DeleteIcon sx={{ mr: 1 }} />
+          Delete
+        </MenuItem>
+      </Menu>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete Subnet</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action cannot be undone. All data associated with this subnet will be permanently deleted.
+          </Alert>
+          <Typography>
+            Are you sure you want to delete subnet "{selectedSubnet?.name}"?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={confirmDelete} color="error" variant="contained">
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Create Subnet Modal */}
+      <CreateSubnetModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        onSuccess={() => {
+          setCreateModalOpen(false);
+          // Refresh subnets list
+          showNotification('Subnet created successfully!', 'success');
+        }}
+      />
+    </Container>
+  );
+};
+
+export default Subnets;
