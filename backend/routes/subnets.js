@@ -285,12 +285,22 @@ router.put('/:id',
     param('id').notEmpty().withMessage('Subnet ID is required'),
     body('name').optional().trim().isLength({ min: 3, max: 50 }),
     body('description').optional().trim().isLength({ max: 500 }),
+    body('blockTime').optional().isFloat({ min: 0.5, max: 10 }),
+    body('gasLimit').optional().isInt({ min: 1000000, max: 100000000 }),
+    body('tokenName').optional().trim().isLength({ min: 1, max: 50 }),
+    body('tokenSymbol').optional().trim().isLength({ min: 1, max: 10 }),
+    body('validators').optional().isInt({ min: 1, max: 100 }),
     validateRequest,
     async (req, res) => {
         try {
             const updates = {};
             if (req.body.name) updates.name = req.body.name;
             if (req.body.description) updates.description = req.body.description;
+            if (req.body.blockTime) updates.block_time = req.body.blockTime;
+            if (req.body.gasLimit) updates.gas_limit = req.body.gasLimit;
+            if (req.body.tokenName) updates.token_name = req.body.tokenName;
+            if (req.body.tokenSymbol) updates.token_symbol = req.body.tokenSymbol;
+            if (req.body.validators) updates.min_validators = req.body.validators;
             
             const subnet = await SubnetService.updateSubnet(req.params.id, updates);
             

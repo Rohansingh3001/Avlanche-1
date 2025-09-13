@@ -109,6 +109,7 @@ export interface WalletContextType {
   connect: () => Promise<void>;
   disconnect: () => void;
   switchNetwork: (chainId: number) => Promise<void>;
+  walletType?: 'core' | 'metamask' | null;
 }
 
 export interface WebSocketContextType {

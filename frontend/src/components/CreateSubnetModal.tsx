@@ -54,7 +54,7 @@ interface SubnetConfig {
 interface CreateSubnetModalProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (subnetData?: any) => void;
 }
 
 const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, onSuccess }) => {
@@ -138,18 +138,35 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
   const createSubnet = async () => {
     setLoading(true);
     try {
+      // Basic validation
+      if (!config.name || config.name.trim().length < 3) {
+        throw new Error('Subnet name must be at least 3 characters long');
+      }
+      
+      if (!config.chainId || parseInt(config.chainId) < 1) {
+        throw new Error('Chain ID must be a positive integer');
+      }
+      
       showInfo('Creating subnet... This may take a few minutes.');
       
       // Prepare subnet data for API
+      const vmTypeMapping: Record<'EVM' | 'SpacesVM' | 'Custom', string> = {
+        EVM: 'SubnetEVM',
+        SpacesVM: 'SpacesVM',
+        Custom: 'Custom'
+      };
+
+      const blockchainType = config.blockchainType as 'EVM' | 'SpacesVM' | 'Custom';
+
       const subnetData = {
-        name: config.name,
-        description: config.description,
-        chainId: parseInt(config.chainId),
-        vmType: config.blockchainType,
+        name: config.name?.trim(),
+        description: config.description?.trim() || '',
+        chainId: parseInt(config.chainId) || Math.floor(Math.random() * 100000) + 1000,
+        vmType: vmTypeMapping[blockchainType] || 'SubnetEVM',
         networkId: config.network === 'fuji' ? 5 : config.network === 'mainnet' ? 1 : 1337,
         validators: {
-          minValidators: parseInt(config.minValidators),
-          maxValidators: parseInt(config.maxValidators),
+          minValidators: parseInt(config.minValidators) || 1,
+          maxValidators: parseInt(config.maxValidators) || 10,
           minStake: parseFloat(config.minStake || '25')
         },
         token: {
@@ -173,14 +190,35 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || `HTTP error! status: ${response.status}`);
+        let errorMessage = `HTTP error! status: ${response.status}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error?.message || errorMessage;
+          
+          // Log detailed validation errors for debugging
+          if (errorData.error?.details) {
+            console.error('Validation details:', errorData.error.details);
+            if (Array.isArray(errorData.error.details)) {
+              const validationErrors = errorData.error.details.map((err: any) => err.msg || err.message).join(', ');
+              errorMessage = `Validation failed: ${validationErrors}`;
+            }
+          }
+        } catch (jsonError) {
+          // Response might not be JSON, use status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        throw new Error('Invalid response format from server');
+      }
       
       showSuccess(`Subnet "${config.name}" created successfully!`);
-      onSuccess();
+      onSuccess(result);
       onClose();
       handleReset();
     } catch (error) {
@@ -233,6 +271,7 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
                 onChange={(e) => setConfig(prev => ({ ...prev, blockchainType: e.target.value }))}
               >
                 <MenuItem value="EVM">EVM (Ethereum Virtual Machine)</MenuItem>
+                <MenuItem value="SpacesVM">SpacesVM (Key-Value Store)</MenuItem>
                 <MenuItem value="Custom">Custom VM</MenuItem>
               </Select>
             </FormControl>

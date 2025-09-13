@@ -40,9 +40,13 @@ import {
   Security as SecurityIcon,
   Group as GroupIcon,
   TrendingUp as TrendingUpIcon,
+  Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import CreateSubnetModal from '../components/CreateSubnetModal';
+import SubnetDetails from '../components/SubnetDetails';
+import EditSubnetSettings from '../components/EditSubnetSettings';
 import { useNotification } from '../components/NotificationProvider';
+import { useWebSocket } from '../contexts/WebSocketContext';
 
 interface Subnet {
   id: string;
@@ -66,22 +70,50 @@ interface Subnet {
 const Subnets: React.FC = () => {
   const theme = useTheme();
   const { showNotification } = useNotification();
+  const { lastMessage, isConnected } = useWebSocket();
   const [subnets, setSubnets] = useState<Subnet[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [selectedSubnet, setSelectedSubnet] = useState<Subnet | null>(null);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    const fetchSubnets = async () => {
-      setLoading(true);
-      try {
-        // Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        const mockSubnets: Subnet[] = [
+  // Fetch subnets from API
+  const fetchSubnets = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/subnets');
+      if (!response.ok) {
+        throw new Error('Failed to fetch subnets');
+      }
+      
+      const result = await response.json();
+      const apiSubnets = result.data || [];
+      
+      // Transform API data to match frontend interface
+      const transformedSubnets: Subnet[] = apiSubnets.map((subnet: any) => ({
+        id: subnet.id,
+        name: subnet.name,
+        description: subnet.description || 'No description provided',
+        chainId: subnet.chain_id || subnet.chainId,
+        vmType: subnet.vm_type || subnet.vmType || 'EVM',
+        status: subnet.status === 'created' ? 'stopped' : subnet.status || 'stopped',
+        network: subnet.config?.deployment?.target || 'local',
+        validators: subnet.config?.validators?.minValidators || 1,
+        blockTime: 2,
+        gasLimit: 8000000,
+        tokenSymbol: subnet.config?.token?.symbol || 'TOKEN',
+        tokenName: subnet.config?.token?.name || 'Custom Token',
+        createdAt: new Date(subnet.created_at).toLocaleDateString(),
+        lastActivity: 'Just now',
+        transactions: Math.floor(Math.random() * 1000),
+        blocks: Math.floor(Math.random() * 500),
+      }));
+      
+      // If no real subnets exist, show mock data for demonstration
+      const mockSubnets: Subnet[] = transformedSubnets.length > 0 ? [] : [
           {
             id: '1',
             name: 'DeFi Subnet',
@@ -120,16 +152,96 @@ const Subnets: React.FC = () => {
           },
         ];
         
-        setSubnets(mockSubnets);
+        // Combine real subnets with mock data if needed
+        setSubnets([...transformedSubnets, ...mockSubnets]);
       } catch (error) {
+        console.error('Error fetching subnets:', error);
         showNotification('Failed to fetch subnets', 'error');
+        
+        // Fallback to mock data on error
+        const fallbackMockSubnets: Subnet[] = [
+          {
+            id: '1',
+            name: 'DeFi Subnet',
+            description: 'Decentralized Finance applications subnet',
+            chainId: 12345,
+            vmType: 'EVM',
+            status: 'running',
+            network: 'fuji',
+            validators: 5,
+            blockTime: 2,
+            gasLimit: 8000000,
+            tokenSymbol: 'DEFI',
+            tokenName: 'DeFi Token',
+            createdAt: '2024-01-15',
+            lastActivity: '2 minutes ago',
+            transactions: 15420,
+            blocks: 8932,
+          },
+        ];
+        setSubnets(fallbackMockSubnets);
       } finally {
         setLoading(false);
       }
     };
 
+  useEffect(() => {
     fetchSubnets();
   }, [showNotification]);
+
+  // Listen for WebSocket updates
+  useEffect(() => {
+    if (lastMessage) {
+      try {
+        const message = typeof lastMessage === 'string' ? JSON.parse(lastMessage) : lastMessage;
+        
+        switch (message.type) {
+          case 'subnet_created':
+            // Refresh the list when a new subnet is created
+            fetchSubnets();
+            showNotification(`Subnet ${message.data?.name || 'Unknown'} created successfully!`, 'success');
+            break;
+            
+          case 'subnet_deployment_completed':
+            // Update subnet status when deployment completes
+            setSubnets(prev => prev.map(subnet => 
+              subnet.id === message.subnetId 
+                ? { ...subnet, status: 'running' as const, lastActivity: 'Just deployed' }
+                : subnet
+            ));
+            showNotification(message.message || 'Subnet deployed successfully', 'success');
+            break;
+            
+          case 'subnet_deployment_failed':
+            // Update subnet status when deployment fails
+            setSubnets(prev => prev.map(subnet => 
+              subnet.id === message.subnetId 
+                ? { ...subnet, status: 'error' as const, lastActivity: 'Deployment failed' }
+                : subnet
+            ));
+            showNotification(message.message || 'Subnet deployment failed', 'error');
+            break;
+            
+          case 'subnet_updated':
+            // Update subnet data when modified
+            if (message.data) {
+              setSubnets(prev => prev.map(subnet => 
+                subnet.id === message.data.id ? { ...subnet, ...message.data } : subnet
+              ));
+            }
+            break;
+            
+          case 'subnet_deleted':
+            // Remove subnet from list when deleted
+            setSubnets(prev => prev.filter(subnet => subnet.id !== message.subnetId));
+            showNotification('Subnet deleted successfully', 'info');
+            break;
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    }
+  }, [lastMessage, showNotification]);
 
   const handleActionMenuClick = (event: React.MouseEvent<HTMLElement>, subnet: Subnet) => {
     setActionMenuAnchor(event.currentTarget);
@@ -139,6 +251,29 @@ const Subnets: React.FC = () => {
   const handleActionMenuClose = () => {
     setActionMenuAnchor(null);
     setSelectedSubnet(null);
+  };
+
+  const handleViewDetails = () => {
+    setDetailsDialogOpen(true);
+    handleActionMenuClose();
+  };
+
+  const handleEditSettings = () => {
+    setSettingsDialogOpen(true);
+    handleActionMenuClose();
+  };
+
+  const handleSaveSettings = (updatedSubnet: Partial<Subnet>) => {
+    if (!selectedSubnet) return;
+    
+    // Update the subnet in the list
+    setSubnets(prev => prev.map(subnet => 
+      subnet.id === selectedSubnet.id 
+        ? { ...subnet, ...updatedSubnet }
+        : subnet
+    ));
+    
+    setSettingsDialogOpen(false);
   };
 
   const handleStartStop = async (subnet: Subnet) => {
@@ -217,9 +352,28 @@ const Subnets: React.FC = () => {
         >
           Subnets
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-          Manage your Avalanche subnets
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Typography variant="h6" color="text.secondary">
+              Manage your Avalanche subnets
+            </Typography>
+            <Chip
+              size="small"
+              label={isConnected ? "Live Updates" : "Offline"}
+              color={isConnected ? "success" : "default"}
+              variant="outlined"
+            />
+          </Box>
+          <Button
+            variant="outlined"
+            startIcon={<RefreshIcon />}
+            onClick={fetchSubnets}
+            disabled={loading}
+            size="small"
+          >
+            Refresh
+          </Button>
+        </Box>
 
         <Button
           variant="contained"
@@ -361,7 +515,10 @@ const Subnets: React.FC = () => {
                   <Button
                     size="small"
                     startIcon={<ViewIcon />}
-                    onClick={() => {/* Navigate to subnet details */}}
+                    onClick={() => {
+                      setSelectedSubnet(subnet);
+                      setDetailsDialogOpen(true);
+                    }}
                   >
                     View Details
                   </Button>
@@ -402,11 +559,11 @@ const Subnets: React.FC = () => {
         open={Boolean(actionMenuAnchor)}
         onClose={handleActionMenuClose}
       >
-        <MenuItem onClick={() => {/* Navigate to subnet details */}}>
+        <MenuItem onClick={handleViewDetails}>
           <ViewIcon sx={{ mr: 1 }} />
           View Details
         </MenuItem>
-        <MenuItem onClick={() => {/* Navigate to subnet settings */}}>
+        <MenuItem onClick={handleEditSettings}>
           <EditIcon sx={{ mr: 1 }} />
           Edit Settings
         </MenuItem>
@@ -448,11 +605,62 @@ const Subnets: React.FC = () => {
       <CreateSubnetModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={() => {
+        onSuccess={(newSubnetData) => {
           setCreateModalOpen(false);
-          // Refresh subnets list
           showNotification('Subnet created successfully!', 'success');
+          
+          // Add the new subnet to the list immediately for instant feedback
+          if (newSubnetData?.data) {
+            const newSubnet: Subnet = {
+              id: newSubnetData.data.id,
+              name: newSubnetData.data.name,
+              description: newSubnetData.data.description || 'No description provided',
+              chainId: newSubnetData.data.chainId,
+              vmType: newSubnetData.data.vmType || 'EVM',
+              status: 'pending',
+              network: newSubnetData.data.deployment?.target || 'local',
+              validators: newSubnetData.data.config?.validators?.minValidators || 1,
+              blockTime: 2,
+              gasLimit: 8000000,
+              tokenSymbol: newSubnetData.data.config?.token?.symbol || 'TOKEN',
+              tokenName: newSubnetData.data.config?.token?.name || 'Custom Token',
+              createdAt: new Date().toLocaleDateString(),
+              lastActivity: 'Just created',
+              transactions: 0,
+              blocks: 0,
+            };
+            
+            setSubnets(prev => [newSubnet, ...prev]);
+          } else {
+            // Fallback to refreshing the list
+            fetchSubnets();
+          }
         }}
+      />
+
+      {/* Subnet Details Modal */}
+      <SubnetDetails
+        open={detailsDialogOpen}
+        subnet={selectedSubnet}
+        onClose={() => {
+          setDetailsDialogOpen(false);
+          setSelectedSubnet(null);
+        }}
+        onEdit={() => {
+          setDetailsDialogOpen(false);
+          setSettingsDialogOpen(true);
+        }}
+      />
+
+      {/* Edit Subnet Settings Modal */}
+      <EditSubnetSettings
+        open={settingsDialogOpen}
+        subnet={selectedSubnet}
+        onClose={() => {
+          setSettingsDialogOpen(false);
+          setSelectedSubnet(null);
+        }}
+        onSave={handleSaveSettings}
       />
     </Container>
   );

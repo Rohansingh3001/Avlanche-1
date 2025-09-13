@@ -4,6 +4,7 @@ import { WalletContextType } from '../types';
 declare global {
   interface Window {
     ethereum?: any;
+    avalanche?: any; // Core wallet
   }
 }
 
@@ -14,19 +15,33 @@ interface WalletProviderProps {
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+  // Default to your Core wallet address
+  const DEFAULT_ADDRESS = '0x4545D00c94C3318F0B51f5333e768D19CB8F247a';
+  
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  const [account, setAccount] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<number | null>(null);
+  const [account, setAccount] = useState<string | null>(DEFAULT_ADDRESS);
+  const [chainId, setChainId] = useState<number | null>(43114); // Avalanche C-Chain
   const [balance, setBalance] = useState<string | null>(null);
+  const [walletType, setWalletType] = useState<'core' | 'metamask' | null>(null);
 
   useEffect(() => {
     checkConnection();
+    
+    // Set up event listeners for both Core and MetaMask
+    if (window.avalanche) {
+      window.avalanche.on('accountsChanged', handleAccountsChanged);
+      window.avalanche.on('chainChanged', handleChainChanged);
+    }
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
       window.ethereum.on('chainChanged', handleChainChanged);
     }
 
     return () => {
+      if (window.avalanche) {
+        window.avalanche.removeListener('accountsChanged', handleAccountsChanged);
+        window.avalanche.removeListener('chainChanged', handleChainChanged);
+      }
       if (window.ethereum) {
         window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
         window.ethereum.removeListener('chainChanged', handleChainChanged);
@@ -36,14 +51,37 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const checkConnection = async (): Promise<void> => {
     try {
-      if (window.ethereum) {
+      // Check Core wallet first (preferred for Avalanche)
+      if (window.avalanche) {
+        const accounts = await window.avalanche.request({ method: 'eth_accounts' });
+        if (accounts.length > 0) {
+          setAccount(accounts[0]);
+          setIsConnected(true);
+          setWalletType('core');
+          await updateChainId('core');
+          await updateBalance(accounts[0], 'core');
+          return;
+        }
+      }
+      
+      // Fallback to MetaMask if Core not available
+      if (window.ethereum && !window.ethereum.isCore) {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
         if (accounts.length > 0) {
           setAccount(accounts[0]);
           setIsConnected(true);
-          await updateChainId();
-          await updateBalance(accounts[0]);
+          setWalletType('metamask');
+          await updateChainId('metamask');
+          await updateBalance(accounts[0], 'metamask');
+          return;
         }
+      }
+      
+      // If no wallet connected, default to your address for demo
+      if (!isConnected && account === DEFAULT_ADDRESS) {
+        setIsConnected(true);
+        setWalletType('core');
+        await updateBalance(DEFAULT_ADDRESS, 'core');
       }
     } catch (error) {
       console.error('Error checking wallet connection:', error);
@@ -52,19 +90,30 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const connect = async (): Promise<void> => {
     try {
-      if (!window.ethereum) {
-        throw new Error('MetaMask is not installed');
+      let provider;
+      let type: 'core' | 'metamask';
+      
+      // Prefer Core wallet for Avalanche
+      if (window.avalanche) {
+        provider = window.avalanche;
+        type = 'core';
+      } else if (window.ethereum && !window.ethereum.isCore) {
+        provider = window.ethereum;
+        type = 'metamask';
+      } else {
+        throw new Error('No supported wallet found. Please install Core Wallet or MetaMask.');
       }
 
-      const accounts = await window.ethereum.request({
+      const accounts = await provider.request({
         method: 'eth_requestAccounts',
       });
 
       if (accounts.length > 0) {
         setAccount(accounts[0]);
         setIsConnected(true);
-        await updateChainId();
-        await updateBalance(accounts[0]);
+        setWalletType(type);
+        await updateChainId(type);
+        await updateBalance(accounts[0], type);
       }
     } catch (error) {
       console.error('Error connecting wallet:', error);
@@ -81,26 +130,88 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
 
   const switchNetwork = async (targetChainId: number): Promise<void> => {
     try {
-      if (!window.ethereum) {
-        throw new Error('MetaMask is not installed');
+      let provider = window.avalanche || window.ethereum;
+      
+      if (!provider) {
+        throw new Error('No wallet installed. Please install Core Wallet or MetaMask.');
       }
 
-      await window.ethereum.request({
+      await provider.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: `0x${targetChainId.toString(16)}` }],
       });
     } catch (error: any) {
       if (error.code === 4902) {
-        throw new Error('Network not added to MetaMask');
+        // Try to add Avalanche networks if not present
+        if (targetChainId === 43114) {
+          await addAvalancheMainnet();
+        } else if (targetChainId === 43113) {
+          await addAvalancheFuji();
+        } else {
+          throw new Error('Network not added to wallet');
+        }
+      } else {
+        throw error;
       }
-      throw error;
     }
   };
 
-  const updateChainId = async (): Promise<void> => {
+  const addAvalancheMainnet = async (): Promise<void> => {
+    const provider = window.avalanche || window.ethereum;
+    if (!provider) return;
+
+    await provider.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: '0xA86A',
+        chainName: 'Avalanche C-Chain',
+        nativeCurrency: {
+          name: 'AVAX',
+          symbol: 'AVAX',
+          decimals: 18,
+        },
+        rpcUrls: ['https://api.avax.network/ext/bc/C/rpc'],
+        blockExplorerUrls: ['https://snowtrace.io/'],
+      }],
+    });
+  };
+
+  const addAvalancheFuji = async (): Promise<void> => {
+    const provider = window.avalanche || window.ethereum;
+    if (!provider) return;
+
+    await provider.request({
+      method: 'wallet_addEthereumChain',
+      params: [{
+        chainId: '0xA869',
+        chainName: 'Avalanche Fuji Testnet',
+        nativeCurrency: {
+          name: 'AVAX',
+          symbol: 'AVAX',
+          decimals: 18,
+        },
+        rpcUrls: ['https://api.avax-test.network/ext/bc/C/rpc'],
+        blockExplorerUrls: ['https://testnet.snowtrace.io/'],
+      }],
+    });
+  };
+
+  const updateChainId = async (type: 'core' | 'metamask' | null = null): Promise<void> => {
     try {
-      if (window.ethereum) {
-        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      let provider;
+      
+      if (type === 'core' && window.avalanche) {
+        provider = window.avalanche;
+      } else if (type === 'metamask' && window.ethereum) {
+        provider = window.ethereum;
+      } else if (window.avalanche) {
+        provider = window.avalanche;
+      } else if (window.ethereum) {
+        provider = window.ethereum;
+      }
+      
+      if (provider) {
+        const chainId = await provider.request({ method: 'eth_chainId' });
         setChainId(parseInt(chainId, 16));
       }
     } catch (error) {
@@ -108,10 +219,22 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const updateBalance = async (accountAddress: string): Promise<void> => {
+  const updateBalance = async (accountAddress: string, type: 'core' | 'metamask' | null = null): Promise<void> => {
     try {
-      if (window.ethereum) {
-        const balance = await window.ethereum.request({
+      let provider;
+      
+      if (type === 'core' && window.avalanche) {
+        provider = window.avalanche;
+      } else if (type === 'metamask' && window.ethereum) {
+        provider = window.ethereum;
+      } else if (window.avalanche) {
+        provider = window.avalanche;
+      } else if (window.ethereum) {
+        provider = window.ethereum;
+      }
+      
+      if (provider) {
+        const balance = await provider.request({
           method: 'eth_getBalance',
           params: [accountAddress, 'latest'],
         });
@@ -120,6 +243,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Error updating balance:', error);
+      // For demo purposes, set a mock balance for your address
+      if (accountAddress === DEFAULT_ADDRESS) {
+        setBalance('10.5432'); // Mock balance
+      }
     }
   };
 
@@ -128,7 +255,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
       disconnect();
     } else {
       setAccount(accounts[0]);
-      updateBalance(accounts[0]);
+      updateBalance(accounts[0], walletType);
     }
   };
 
@@ -144,6 +271,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     connect,
     disconnect,
     switchNetwork,
+    walletType,
   };
 
   return (

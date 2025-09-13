@@ -21,6 +21,7 @@ const Assets = React.lazy(() => import('./pages/Assets'));
 const Monitoring = React.lazy(() => import('./pages/Monitoring'));
 const CLIDocs = React.lazy(() => import('./pages/CLIDocs'));
 const Settings = React.lazy(() => import('./pages/Settings'));
+const WalletPage = React.lazy(() => import('./pages/WalletPage'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Create React Query client
@@ -223,6 +224,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     { label: 'Assets', path: '/assets' },
     { label: 'Monitoring', path: '/monitoring' },
     { label: 'CLI Docs', path: '/cli' },
+    { label: 'Wallet', path: '/wallet' },
     { label: 'Settings', path: '/settings' }
   ];
 
@@ -277,6 +279,7 @@ const App: React.FC = () => {
                       <Route path="/monitoring" element={<Monitoring />} />
                       <Route path="/cli" element={<CLIDocs />} />
                       <Route path="/cli-docs" element={<CLIDocs />} />
+                      <Route path="/wallet" element={<WalletPage />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="*" element={<ErrorBoundary />} />
                     </Routes>
