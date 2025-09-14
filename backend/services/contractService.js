@@ -431,6 +431,47 @@ class ContractService {
     }
 
     /**
+     * Update contract
+     */
+    async updateContract(contractId, updateData) {
+        try {
+            const contract = await this.getContractById(contractId);
+            if (!contract) {
+                throw new Error('Contract not found');
+            }
+
+            const updateFields = [];
+            const updateValues = [];
+            
+            // Build dynamic update query
+            Object.keys(updateData).forEach(key => {
+                if (updateData[key] !== undefined) {
+                    updateFields.push(`${key} = ?`);
+                    updateValues.push(updateData[key]);
+                }
+            });
+            
+            if (updateFields.length === 0) {
+                throw new Error('No fields to update');
+            }
+            
+            updateFields.push('updated_at = ?');
+            updateValues.push(new Date().toISOString());
+            updateValues.push(contractId);
+
+            const query = `UPDATE contracts SET ${updateFields.join(', ')} WHERE id = ?`;
+            await DatabaseService.query(query, updateValues);
+
+            console.log(`✅ Contract ${contract.name} updated successfully`);
+            
+            return await this.getContractById(contractId);
+        } catch (error) {
+            console.error('❌ Error updating contract:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Delete contract
      */
     async deleteContract(contractId) {

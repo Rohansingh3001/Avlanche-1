@@ -84,16 +84,22 @@ const Monitoring: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [actionMenuAnchor, setActionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [realTimeData, setRealTimeData] = useState<any>({});
+  const [healthData, setHealthData] = useState<any>({});
+  const [metricsData, setMetricsData] = useState<any>({});
 
-  // Mock data for charts
-  const performanceData = [
-    { time: '00:00', tps: 45, blocks: 120, validators: 8 },
-    { time: '04:00', tps: 52, blocks: 145, validators: 8 },
-    { time: '08:00', tps: 38, blocks: 98, validators: 7 },
-    { time: '12:00', tps: 67, blocks: 178, validators: 9 },
-    { time: '16:00', tps: 54, blocks: 156, validators: 8 },
-    { time: '20:00', tps: 41, blocks: 112, validators: 8 },
-    { time: '24:00', tps: 49, blocks: 134, validators: 8 },
+  // Process real metrics data for charts
+  const performanceData = metricsData.metrics ? metricsData.metrics.map((metric: any, index: number) => ({
+    time: new Date(metric.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    cpu: metric.cpu || 0,
+    memory: metric.memory || 0,
+    network: metric.network || 0,
+    blockHeight: metric.blockHeight || 0,
+  })) : [
+    { time: '00:00', cpu: 45, memory: 120, network: 8, blockHeight: 0 },
+    { time: '04:00', cpu: 52, memory: 145, network: 8, blockHeight: 0 },
+    { time: '08:00', cpu: 38, memory: 98, network: 7, blockHeight: 0 },
+    { time: '12:00', cpu: 67, memory: 178, network: 9, blockHeight: 0 },
   ];
 
   const networkDistribution = [
@@ -103,95 +109,123 @@ const Monitoring: React.FC = () => {
   ];
 
   const resourceUsage = [
-    { resource: 'CPU', usage: 68, max: 100 },
-    { resource: 'Memory', usage: 42, max: 100 },
-    { resource: 'Storage', usage: 35, max: 100 },
-    { resource: 'Network', usage: 78, max: 100 },
+    { resource: 'CPU', usage: healthData.metrics?.cpu || 0, max: 100 },
+    { resource: 'Memory', usage: healthData.metrics?.memory || 0, max: 100 },
+    { resource: 'Storage', usage: healthData.metrics?.storage || 0, max: 100 },
+    { resource: 'Network', usage: healthData.metrics?.network || 0, max: 100 },
   ];
 
   const metricCards: MetricCard[] = [
     {
-      title: 'Total Transactions',
-      value: '2.4M',
-      change: 12.5,
+      title: 'System Health',
+      value: healthData.overall ? `${healthData.overall}%` : 'Loading...',
+      change: healthData.overall >= 80 ? 5.2 : -2.1,
       icon: <TransactionsIcon />,
       color: theme.palette.primary.main,
     },
     {
-      title: 'Blocks Produced',
-      value: '48,392',
-      change: 8.2,
-      icon: <BlocksIcon />,
+      title: 'CPU Usage',
+      value: healthData.metrics?.cpu ? `${healthData.metrics.cpu}%` : 'N/A',
+      change: 0,
+      icon: <MemoryIcon />,
       color: theme.palette.secondary.main,
     },
     {
-      title: 'Active Validators',
-      value: 24,
-      change: 4.3,
-      icon: <ValidatorsIcon />,
+      title: 'Memory Usage',
+      value: healthData.metrics?.memory ? `${healthData.metrics.memory}%` : 'N/A',
+      change: 0,
+      icon: <StorageIcon />,
       color: theme.palette.success.main,
     },
     {
-      title: 'Network TPS',
-      value: 156,
-      change: -2.1,
-      icon: <SpeedIcon />,
+      title: 'Network Status',
+      value: healthData.status || 'Unknown',
+      change: healthData.status === 'healthy' ? 2.1 : -1.5,
+      icon: <NetworkIcon />,
       color: theme.palette.warning.main,
     },
   ];
 
   useEffect(() => {
-    // Mock log data
-    const mockLogs: LogEntry[] = [
-      {
-        id: '1',
-        timestamp: '2024-03-12 10:30:45',
-        level: 'info',
-        message: 'New block produced successfully',
-        source: 'Consensus',
-        subnet: 'DeFi Subnet',
-      },
-      {
-        id: '2',
-        timestamp: '2024-03-12 10:30:42',
-        level: 'success',
-        message: 'Validator node synchronized',
-        source: 'Network',
-        subnet: 'Gaming Subnet',
-      },
-      {
-        id: '3',
-        timestamp: '2024-03-12 10:30:38',
-        level: 'warning',
-        message: 'High memory usage detected on node-3',
-        source: 'System',
-        subnet: 'DeFi Subnet',
-      },
-      {
-        id: '4',
-        timestamp: '2024-03-12 10:30:35',
-        level: 'error',
-        message: 'Failed to connect to peer 192.168.1.100',
-        source: 'Network',
-        subnet: 'C-Chain',
-      },
-      {
-        id: '5',
-        timestamp: '2024-03-12 10:30:30',
-        level: 'info',
-        message: 'Smart contract deployed successfully',
-        source: 'EVM',
-        subnet: 'Gaming Subnet',
-      },
-    ];
-    setLogs(mockLogs);
-  }, []);
+    fetchHealthData();
+    fetchMetricsData();
+    fetchSystemLogs();
+    
+    // Set up real-time updates
+    const interval = setInterval(() => {
+      fetchHealthData();
+      fetchMetricsData();
+    }, 30000); // Update every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedSubnet, timeRange]);
+
+  const fetchHealthData = async () => {
+    try {
+      const response = await fetch('/api/monitoring/health');
+      if (response.ok) {
+        const result = await response.json();
+        setHealthData(result.data || {});
+      }
+    } catch (error) {
+      console.error('Error fetching health data:', error);
+    }
+  };
+
+  const fetchMetricsData = async () => {
+    try {
+      const params = new URLSearchParams({
+        timeRange,
+        ...(selectedSubnet !== 'all' && { subnet_id: selectedSubnet })
+      });
+      
+      const response = await fetch(`/api/monitoring/metrics?${params}`);
+      if (response.ok) {
+        const result = await response.json();
+        setMetricsData(result.data || {});
+      }
+    } catch (error) {
+      console.error('Error fetching metrics data:', error);
+    }
+  };
+
+  const fetchSystemLogs = async () => {
+    try {
+      const response = await fetch('/api/monitoring/alerts');
+      if (response.ok) {
+        const result = await response.json();
+        const alerts = result.data || [];
+        
+        // Convert alerts to log format
+        const logEntries: LogEntry[] = alerts.map((alert: any, index: number) => ({
+          id: alert.id || index.toString(),
+          timestamp: new Date(alert.timestamp).toLocaleString(),
+          level: alert.severity as 'info' | 'warning' | 'error' | 'success',
+          message: alert.message,
+          source: 'System',
+          subnet: alert.subnet_id || 'Unknown',
+        }));
+        
+        setLogs(logEntries);
+      }
+    } catch (error) {
+      console.error('Error fetching system logs:', error);
+    }
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsRefreshing(false);
+    try {
+      await Promise.all([
+        fetchHealthData(),
+        fetchMetricsData(),
+        fetchSystemLogs()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const getLogIcon = (level: string) => {
@@ -356,10 +390,10 @@ const Monitoring: React.FC = () => {
                     <Tooltip />
                     <Area
                       type="monotone"
-                      dataKey="tps"
+                      dataKey="cpu"
                       stroke={theme.palette.primary.main}
                       fill={alpha(theme.palette.primary.main, 0.3)}
-                      name="TPS"
+                      name="CPU %"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -406,17 +440,17 @@ const Monitoring: React.FC = () => {
                     <Tooltip />
                     <Line
                       type="monotone"
-                      dataKey="blocks"
+                      dataKey="memory"
                       stroke={theme.palette.secondary.main}
                       strokeWidth={2}
-                      name="Blocks"
+                      name="Memory %"
                     />
                     <Line
                       type="monotone"
-                      dataKey="validators"
+                      dataKey="network"
                       stroke={theme.palette.success.main}
                       strokeWidth={2}
-                      name="Validators"
+                      name="Network %"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -441,30 +475,42 @@ const Monitoring: React.FC = () => {
                       <SuccessIcon color="success" />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Consensus Layer"
-                      secondary="All validators online and synced"
+                      primary="System Health"
+                      secondary={healthData.status === 'healthy' ? 'All systems operational' : 'Some issues detected'}
                     />
-                    <Chip label="Healthy" color="success" size="small" />
+                    <Chip 
+                      label={healthData.status || 'Unknown'} 
+                      color={healthData.status === 'healthy' ? 'success' : healthData.status === 'warning' ? 'warning' : 'error'} 
+                      size="small" 
+                    />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       <SuccessIcon color="success" />
                     </ListItemIcon>
                     <ListItemText
-                      primary="P2P Network"
-                      secondary="24 peers connected"
+                      primary="CPU Usage"
+                      secondary={`${healthData.metrics?.cpu || 0}% utilization`}
                     />
-                    <Chip label="Healthy" color="success" size="small" />
+                    <Chip 
+                      label={healthData.metrics?.cpu > 80 ? 'High' : 'Normal'} 
+                      color={healthData.metrics?.cpu > 80 ? 'warning' : 'success'} 
+                      size="small" 
+                    />
                   </ListItem>
                   <ListItem>
                     <ListItemIcon>
                       <WarningIcon color="warning" />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Block Production"
-                      secondary="Slight delay in last block"
+                      primary="Memory Usage"
+                      secondary={`${healthData.metrics?.memory || 0}% utilization`}
                     />
-                    <Chip label="Warning" color="warning" size="small" />
+                    <Chip 
+                      label={healthData.metrics?.memory > 80 ? 'High' : 'Normal'} 
+                      color={healthData.metrics?.memory > 80 ? 'warning' : 'success'} 
+                      size="small" 
+                    />
                   </ListItem>
                 </List>
               </CardContent>
@@ -570,36 +616,36 @@ const Monitoring: React.FC = () => {
                   <Grid item xs={6}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <MemoryIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
-                      <Typography variant="h6">2.4 GB</Typography>
+                      <Typography variant="h6">{healthData.metrics?.memory || 0}%</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Memory Used
+                        Memory Usage
                       </Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={6}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <StorageIcon sx={{ fontSize: 32, color: 'secondary.main', mb: 1 }} />
-                      <Typography variant="h6">156 GB</Typography>
+                      <Typography variant="h6">{healthData.metrics?.storage || 0}%</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Storage Used
+                        Storage Usage
                       </Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={6}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <NetworkIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
-                      <Typography variant="h6">1.2 GB/s</Typography>
+                      <Typography variant="h6">{healthData.metrics?.network || 0}%</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        Network I/O
+                        Network Usage
                       </Typography>
                     </Paper>
                   </Grid>
                   <Grid item xs={6}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                       <SpeedIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
-                      <Typography variant="h6">68%</Typography>
+                      <Typography variant="h6">{healthData.metrics?.cpu || 0}%</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        CPU Load
+                        CPU Usage
                       </Typography>
                     </Paper>
                   </Grid>

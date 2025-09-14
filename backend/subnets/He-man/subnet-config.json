@@ -1,0 +1,15 @@
+{
+  "name": "He-man",
+  "vm": "SubnetEVM",
+  "genesis": "genesis.json",
+  "chainId": 127,
+  "subnet": {
+    "threshold": 6
+  },
+  "validators": {
+    "minValidators": 1,
+    "maxValidators": 10,
+    "minStake": 25,
+    "maxStakeDuration": 31536000
+  }
+}

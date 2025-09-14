@@ -18,8 +18,9 @@ import {
   Error,
   Refresh,
 } from '@mui/icons-material';
-import { useWallet } from '../contexts/WalletContext';
+import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
 import { alpha } from '@mui/material/styles';
+import BalanceDisplay from './BalanceDisplay';
 
 const WalletConnection: React.FC = () => {
   const {
@@ -31,7 +32,9 @@ const WalletConnection: React.FC = () => {
     disconnect,
     switchNetwork,
     walletType,
-  } = useWallet();
+    isLoading,
+    error,
+  } = useEnhancedWallet();
 
   const [copied, setCopied] = React.useState(false);
 
@@ -167,14 +170,7 @@ const WalletConnection: React.FC = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Balance
                 </Typography>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Typography variant="body2">
-                    {balance ? `${balance} AVAX` : 'Loading...'}
-                  </Typography>
-                  <IconButton size="small">
-                    <Refresh />
-                  </IconButton>
-                </Box>
+                <BalanceDisplay />
               </Box>
 
               {/* Actions */}

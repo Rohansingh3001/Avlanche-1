@@ -63,28 +63,25 @@ interface Token {
   id: string;
   name: string;
   symbol: string;
-  balance: string;
-  value: number;
-  change24h: number;
   address: string;
   decimals: number;
-  subnetId: string;
-  subnetName: string;
-  logo?: string;
+  subnet_id: string;
+  type: string;
+  total_supply: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface NFT {
   id: string;
   name: string;
-  collection: string;
-  tokenId: string;
-  image: string;
-  description: string;
+  symbol: string;
   address: string;
-  subnetId: string;
-  subnetName: string;
-  traits: any[];
-  lastSale?: number;
+  subnet_id: string;
+  type: string;
+  total_supply: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Transaction {
@@ -116,130 +113,66 @@ const Assets: React.FC = () => {
     amount: '',
     asset: '',
   });
+  const [createAssetModalOpen, setCreateAssetModalOpen] = useState(false);
+  const [createAssetForm, setCreateAssetForm] = useState({
+    name: '',
+    symbol: '',
+    type: 'token',
+    subnet_id: '',
+    decimals: 18,
+    totalSupply: '',
+  });
 
-  // Mock data for demonstration
+  // Fetch real data from backend
   useEffect(() => {
     const fetchAssets = async () => {
       setLoading(true);
       try {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        const response = await fetch('/api/assets');
         
-        const mockTokens: Token[] = [
-          {
-            id: '1',
-            name: 'Avalanche',
-            symbol: 'AVAX',
-            balance: '125.5',
-            value: 3890.25,
-            change24h: 5.2,
-            address: '0x0000000000000000000000000000000000000000',
-            decimals: 18,
-            subnetId: '1',
-            subnetName: 'C-Chain',
-          },
-          {
-            id: '2',
-            name: 'DeFi Token',
-            symbol: 'DEFI',
-            balance: '1000.0',
-            value: 250.0,
-            change24h: -2.1,
-            address: '0x1234567890abcdef1234567890abcdef12345678',
-            decimals: 18,
-            subnetId: '1',
-            subnetName: 'DeFi Subnet',
-          },
-          {
-            id: '3',
-            name: 'Gaming Token',
-            symbol: 'GAME',
-            balance: '500.0',
-            value: 125.0,
-            change24h: 8.7,
-            address: '0xabcdef1234567890abcdef1234567890abcdef12',
-            decimals: 18,
-            subnetId: '2',
-            subnetName: 'Gaming Subnet',
-          },
-        ];
-
-        const mockNFTs: NFT[] = [
-          {
-            id: '1',
-            name: 'Avalanche Penguin #1234',
-            collection: 'Avalanche Penguins',
-            tokenId: '1234',
-            image: 'https://via.placeholder.com/300x300/FF6B6B/FFFFFF?text=Penguin+%231234',
-            description: 'A rare Avalanche Penguin with ice powers',
-            address: '0xdef1234567890abcdef1234567890abcdef12345',
-            subnetId: '2',
-            subnetName: 'Gaming Subnet',
-            traits: [
-              { trait_type: 'Background', value: 'Ice' },
-              { trait_type: 'Body', value: 'Classic' },
-              { trait_type: 'Eyes', value: 'Cool' },
-            ],
-            lastSale: 2.5,
-          },
-          {
-            id: '2',
-            name: 'DeFi Crystal #567',
-            collection: 'DeFi Crystals',
-            tokenId: '567',
-            image: 'https://via.placeholder.com/300x300/4ECDC4/FFFFFF?text=Crystal+%23567',
-            description: 'A powerful DeFi crystal that generates yield',
-            address: '0x567890abcdef1234567890abcdef1234567890ab',
-            subnetId: '1',
-            subnetName: 'DeFi Subnet',
-            traits: [
-              { trait_type: 'Color', value: 'Teal' },
-              { trait_type: 'Power', value: 'High' },
-              { trait_type: 'Rarity', value: 'Epic' },
-            ],
-            lastSale: 1.8,
-          },
-        ];
-
-        const mockTransactions: Transaction[] = [
-          {
-            id: '1',
-            type: 'send',
-            amount: '10.0',
-            asset: 'AVAX',
-            from: '0x...your_address',
-            to: '0x...recipient',
-            timestamp: '2 minutes ago',
-            status: 'confirmed',
-            txHash: '0xabc123...',
-          },
-          {
-            id: '2',
-            type: 'receive',
-            amount: '25.0',
-            asset: 'DEFI',
-            from: '0x...sender',
-            to: '0x...your_address',
-            timestamp: '1 hour ago',
-            status: 'confirmed',
-            txHash: '0xdef456...',
-          },
-          {
-            id: '3',
-            type: 'swap',
-            amount: '100.0',
-            asset: 'AVAX → GAME',
-            from: '0x...your_address',
-            to: '0x...dex_address',
-            timestamp: '3 hours ago',
-            status: 'confirmed',
-            txHash: '0x789ghi...',
-          },
-        ];
-        
-        setTokens(mockTokens);
-        setNFTs(mockNFTs);
-        setTransactions(mockTransactions);
+        if (response.ok) {
+          const result = await response.json();
+          const assets = result.data || [];
+          
+          // Separate tokens and NFTs
+          const tokenAssets = assets.filter((asset: any) => asset.type === 'token');
+          const nftAssets = assets.filter((asset: any) => asset.type === 'nft');
+          
+          setTokens(tokenAssets);
+          setNFTs(nftAssets);
+          
+          // Mock transactions for now - in a real app, you'd fetch these from the blockchain
+          const mockTransactions: Transaction[] = [
+            {
+              id: '1',
+              type: 'send',
+              amount: '10.0',
+              asset: 'AVAX',
+              from: '0x...your_address',
+              to: '0x...recipient',
+              timestamp: '2 minutes ago',
+              status: 'confirmed',
+              txHash: '0xabc123...',
+            },
+            {
+              id: '2',
+              type: 'receive',
+              amount: '25.0',
+              asset: tokenAssets[0]?.symbol || 'TOKEN',
+              from: '0x...sender',
+              to: '0x...your_address',
+              timestamp: '1 hour ago',
+              status: 'confirmed',
+              txHash: '0xdef456...',
+            },
+          ];
+          
+          setTransactions(mockTransactions);
+        } else {
+          throw new Error('Failed to fetch assets');
+        }
       } catch (error) {
+        console.error('Error fetching assets:', error);
         showNotification('Failed to fetch assets', 'error');
       } finally {
         setLoading(false);
@@ -271,7 +204,48 @@ const Assets: React.FC = () => {
     }
   };
 
-  const totalPortfolioValue = tokens.reduce((sum, token) => sum + token.value, 0);
+  const handleCreateAsset = async () => {
+    try {
+      const response = await fetch('/api/assets', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(createAssetForm),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showNotification(`${createAssetForm.type.toUpperCase()} created successfully!`, 'success');
+        setCreateAssetModalOpen(false);
+        setCreateAssetForm({
+          name: '',
+          symbol: '',
+          type: 'token',
+          subnet_id: '',
+          decimals: 18,
+          totalSupply: '',
+        });
+        
+        // Refresh assets list
+        const assetsResponse = await fetch('/api/assets');
+        if (assetsResponse.ok) {
+          const assetsResult = await assetsResponse.json();
+          const assets = assetsResult.data || [];
+          setTokens(assets.filter((asset: any) => asset.type === 'token'));
+          setNFTs(assets.filter((asset: any) => asset.type === 'nft'));
+        }
+      } else {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create asset');
+      }
+    } catch (error: any) {
+      console.error('Error creating asset:', error);
+      showNotification(`Failed to create ${createAssetForm.type}: ${error.message}`, 'error');
+    }
+  };
+
+  const totalPortfolioValue = tokens.length * 100; // Simplified calculation for demo
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -362,6 +336,14 @@ const Assets: React.FC = () => {
                 >
                   History
                 </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setCreateAssetModalOpen(true)}
+                  sx={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' }}
+                >
+                  Create Asset
+                </Button>
               </Box>
             </Grid>
           </Grid>
@@ -436,34 +418,22 @@ const Assets: React.FC = () => {
 
                       <Box sx={{ mb: 2 }}>
                         <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                          {token.balance} {token.symbol}
+                          {token.total_supply} {token.symbol}
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                          ${token.value.toLocaleString()}
+                          Total Supply
                         </Typography>
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Chip
-                          label={token.subnetName}
+                          label={`Subnet ${token.subnet_id}`}
                           size="small"
                           variant="outlined"
                         />
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          {token.change24h >= 0 ? (
-                            <TrendingUpIcon sx={{ color: 'success.main', mr: 0.5 }} />
-                          ) : (
-                            <TrendingDownIcon sx={{ color: 'error.main', mr: 0.5 }} />
-                          )}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: token.change24h >= 0 ? 'success.main' : 'error.main',
-                            }}
-                          >
-                            {token.change24h >= 0 ? '+' : ''}{token.change24h}%
-                          </Typography>
-                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {token.decimals} decimals
+                        </Typography>
                       </Box>
                     </CardContent>
 
@@ -521,6 +491,16 @@ const Assets: React.FC = () => {
                 <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
                   Your NFT collection will appear here
                 </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setCreateAssetForm(prev => ({ ...prev, type: 'nft' }));
+                    setCreateAssetModalOpen(true);
+                  }}
+                >
+                  Create NFT Collection
+                </Button>
               </CardContent>
             </Card>
           ) : (
@@ -536,27 +516,31 @@ const Assets: React.FC = () => {
                       },
                     }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={nft.image}
-                      alt={nft.name}
-                    />
+                    <Box
+                      component="div"
+                      sx={{
+                        height: 200,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'action.hover',
+                      }}
+                    >
+                      <DiamondIcon sx={{ fontSize: 80, color: 'text.secondary' }} />
+                    </Box>
                     <CardContent>
                       <Typography variant="h6" gutterBottom noWrap>
                         {nft.name}
                       </Typography>
                       <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {nft.collection}
+                        {nft.symbol}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {nft.subnetName}
+                        Subnet {nft.subnet_id}
                       </Typography>
-                      {nft.lastSale && (
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          Last Sale: {nft.lastSale} AVAX
-                        </Typography>
-                      )}
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        Supply: {nft.total_supply}
+                      </Typography>
                     </CardContent>
                     <CardActions>
                       <Button size="small" startIcon={<ViewIcon />}>
@@ -728,6 +712,90 @@ const Assets: React.FC = () => {
           <SendIcon />
         </Fab>
       </Tooltip>
+
+      {/* Create Asset Modal */}
+      <Dialog
+        open={createAssetModalOpen}
+        onClose={() => setCreateAssetModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Create New Asset</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Asset Type</InputLabel>
+                <Select
+                  value={createAssetForm.type}
+                  label="Asset Type"
+                  onChange={(e) => setCreateAssetForm(prev => ({ ...prev, type: e.target.value }))}
+                >
+                  <SelectMenuItem value="token">Token (ERC20)</SelectMenuItem>
+                  <SelectMenuItem value="nft">NFT Collection (ERC721)</SelectMenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Asset Name"
+                value={createAssetForm.name}
+                onChange={(e) => setCreateAssetForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="My Token"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Symbol"
+                value={createAssetForm.symbol}
+                onChange={(e) => setCreateAssetForm(prev => ({ ...prev, symbol: e.target.value.toUpperCase() }))}
+                placeholder="MTK"
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Subnet ID"
+                value={createAssetForm.subnet_id}
+                onChange={(e) => setCreateAssetForm(prev => ({ ...prev, subnet_id: e.target.value }))}
+                placeholder="1"
+              />
+            </Grid>
+            {createAssetForm.type === 'token' && (
+              <>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Decimals"
+                    type="number"
+                    value={createAssetForm.decimals}
+                    onChange={(e) => setCreateAssetForm(prev => ({ ...prev, decimals: parseInt(e.target.value) || 18 }))}
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <TextField
+                    fullWidth
+                    label="Total Supply"
+                    value={createAssetForm.totalSupply}
+                    onChange={(e) => setCreateAssetForm(prev => ({ ...prev, totalSupply: e.target.value }))}
+                    placeholder="1000000"
+                  />
+                </Grid>
+              </>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateAssetModalOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleCreateAsset} variant="contained">
+            Create {createAssetForm.type.toUpperCase()}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };

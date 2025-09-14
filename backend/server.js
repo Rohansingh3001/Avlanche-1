@@ -13,6 +13,8 @@ const subnetRoutes = require('./routes/subnets');
 const contractRoutes = require('./routes/contracts');
 const assetRoutes = require('./routes/assets');
 const monitoringRoutes = require('./routes/monitoring');
+const faucetRoutes = require('./routes/faucet');
+const balanceRoutes = require('./routes/balance');
 
 // Import services
 const MonitoringService = require('./services/monitoringService');
@@ -65,6 +67,8 @@ app.use('/api/subnets', subnetRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/assets', assetRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/faucet', faucetRoutes);
+app.use('/api/balance', balanceRoutes);
 
 // WebSocket connection handling
 const clients = new Set();

@@ -44,6 +44,9 @@ import {
 } from '@mui/icons-material';
 // Removed import of SolidityEditor as it's not used in this component
 import { useNotification } from './NotificationProvider';
+import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
+import { AVALANCHE_NETWORKS, getNetworkConfig, getGasConfig, isL2Network } from '../config/avalanche';
+import NetworkSelector from './NetworkSelector';
 
 interface DeployContractModalProps {
   open: boolean;
@@ -56,7 +59,7 @@ interface DeployContractModalProps {
     bytecode?: string;
   };
   onDeployed: () => void;
-  subnets?: Array<{ id: string; name: string; chainId: number; status: string }>;
+  networks?: Array<{ id: string; name: string; chainId: number; status: string }>;
 }
 
 interface CompilationResult {
@@ -84,10 +87,21 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
   onClose,
   contract,
   onDeployed,
-  subnets = [],
+  networks = [],
 }) => {
   const theme = useTheme();
   const { showNotification } = useNotification();
+  const { 
+    chainId, 
+    account, 
+    isConnected, 
+    provider, 
+    signer,
+    getCurrentNetwork,
+    getGasConfiguration,
+    estimateGas: walletEstimateGas,
+    sendTransaction
+  } = useEnhancedWallet();
   
   const [activeStep, setActiveStep] = useState(0);
   const [sourceCode, setSourceCode] = useState('');
@@ -96,7 +110,7 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
   const [deploymentForm, setDeploymentForm] = useState({
     name: '',
     description: '',
-    subnetId: '',
+    networkId: '',
     gasLimit: '5000000',
     gasPrice: '25000000000', // 25 gwei
     constructorArgs: '',
@@ -139,7 +153,7 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
       setDeploymentForm({
         name: '',
         description: '',
-        subnetId: '',
+        networkId: '',
         gasLimit: '5000000',
         gasPrice: '25000000000',
         constructorArgs: '',
@@ -149,12 +163,12 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
     }
   }, [open]);
 
-  // Auto-fill subnet selection if only one is available
+  // Auto-detect current network when wallet is connected
   useEffect(() => {
-    if (subnets.length === 1 && !deploymentForm.subnetId) {
-      setDeploymentForm(prev => ({ ...prev, subnetId: subnets[0].id }));
+    if (chainId && !deploymentForm.networkId) {
+      setDeploymentForm(prev => ({ ...prev, networkId: chainId.toString() }));
     }
-  }, [subnets, deploymentForm.subnetId]);
+  }, [chainId, deploymentForm.networkId]);
 
   const handleCompilationSuccess = (result: CompilationResult) => {
     setCompilationResult(result);
@@ -180,8 +194,8 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
         showNotification('Please select a contract to deploy', 'warning');
         return;
       }
-      if (!deploymentForm.subnetId) {
-        showNotification('Please select a subnet for deployment', 'warning');
+      if (!chainId) {
+        showNotification('Please connect your wallet and select a network', 'warning');
         return;
       }
       if (!deploymentForm.name.trim()) {
@@ -206,7 +220,7 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
     }
   };
 
-  const estimateGas = async () => {
+  const estimateContractGas = async () => {
     if (!compilationResult || !selectedContract) return;
     
     const contract = compilationResult.contracts[selectedContract];
@@ -219,7 +233,7 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
         body: JSON.stringify({
           bytecode: contract.bytecode,
           constructorArgs,
-          subnetId: deploymentForm.subnetId,
+          networkId: chainId,
         }),
       });
       
@@ -235,66 +249,127 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
   };
 
   const deployContract = async () => {
-    if (!compilationResult || !selectedContract) return;
+    if (!compilationResult || !selectedContract || !signer || !chainId) {
+      showNotification('Missing requirements for deployment', 'error');
+      return;
+    }
 
     setDeploying(true);
     try {
-      const contract = compilationResult.contracts[selectedContract];
+      const contractData = compilationResult.contracts[selectedContract];
       const constructorArgs = parseConstructorArgs(deploymentForm.constructorArgs);
-
-      // First, upload the contract
-      const uploadResponse = await fetch('/api/contracts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: deploymentForm.name,
-          description: deploymentForm.description,
-          subnetId: deploymentForm.subnetId,
-          sourceCode,
-          abi: JSON.stringify(contract.abi),
-          bytecode: contract.bytecode,
-          compiler: 'solc',
-          version: compilationResult.compilerVersion,
-        }),
-      });
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error?.message || 'Failed to upload contract');
-      }
-
-      const uploadResult = await uploadResponse.json();
-      const contractId = uploadResult.data.id;
-
-      // Then deploy the contract
-      const deployResponse = await fetch('/api/contracts/deploy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contractId,
-          constructorArgs,
-          gasLimit: parseInt(deploymentForm.gasLimit),
-          gasPrice: deploymentForm.gasPrice,
-        }),
-      });
-
-      if (!deployResponse.ok) {
-        const errorData = await deployResponse.json();
-        throw new Error(errorData.error?.message || 'Deployment failed');
-      }
-
-      const deployResult = await deployResponse.json();
-      setDeploymentResult(deployResult.data);
+      const currentNetwork = getCurrentNetwork?.();
       
-      showNotification('Contract deployed successfully!', 'success');
+      if (!currentNetwork) {
+        throw new Error('Network not supported');
+      }
+
+      // Get gas configuration for current network
+      const gasConfig = getGasConfiguration?.();
+      const deploymentGasConfig = {
+        gasLimit: deploymentForm.gasLimit || gasConfig?.gasLimit || '5000000',
+        gasPrice: deploymentForm.gasPrice || gasConfig?.gasPrice || '25000000000',
+        maxFeePerGas: gasConfig?.maxFeePerGas,
+        maxPriorityFeePerGas: gasConfig?.maxPriorityFeePerGas,
+      };
+
+      showNotification('Deploying contract to ' + currentNetwork.displayName, 'info');
+
+      // Create contract factory with ethers.js v6
+      const { ethers } = await import('ethers');
+      const contractFactory = new ethers.ContractFactory(
+        contractData.abi,
+        contractData.bytecode,
+        signer
+      );
+
+      // Estimate gas if not provided
+      let estimatedGas;
+      try {
+        estimatedGas = await contractFactory.getDeployTransaction(...constructorArgs).then(tx =>
+          provider?.estimateGas(tx)
+        );
+        if (estimatedGas && !deploymentForm.gasLimit) {
+          deploymentGasConfig.gasLimit = (estimatedGas * BigInt(120) / BigInt(100)).toString(); // Add 20% buffer
+        }
+      } catch (gasError) {
+        console.warn('Gas estimation failed, using provided values:', gasError);
+      }
+
+      // Deploy contract
+      const deployedContract = await contractFactory.deploy(...constructorArgs, {
+        gasLimit: deploymentGasConfig.gasLimit,
+        gasPrice: deploymentGasConfig.gasPrice,
+        ...(deploymentGasConfig.maxFeePerGas && { 
+          maxFeePerGas: deploymentGasConfig.maxFeePerGas,
+          maxPriorityFeePerGas: deploymentGasConfig.maxPriorityFeePerGas 
+        }),
+      });
+
+      showNotification('Contract deployment transaction sent!', 'info');
+
+      // Wait for deployment
+      await deployedContract.waitForDeployment();
+      const contractAddress = await deployedContract.getAddress();
+      const deploymentTx = deployedContract.deploymentTransaction();
+
+      // Save contract to backend
+      try {
+        const uploadResponse = await fetch('/api/contracts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: deploymentForm.name,
+            description: deploymentForm.description,
+            networkId: chainId,
+            networkName: currentNetwork.displayName,
+            address: contractAddress,
+            sourceCode,
+            abi: JSON.stringify(contractData.abi),
+            bytecode: contractData.bytecode,
+            compiler: 'solc',
+            version: compilationResult.compilerVersion,
+            deploymentTx: deploymentTx?.hash,
+            gasUsed: deploymentTx ? 'pending' : 'unknown',
+            deployer: account,
+          }),
+        });
+
+        if (uploadResponse.ok) {
+          console.log('Contract saved to database successfully');
+        }
+      } catch (saveError) {
+        console.warn('Failed to save contract to database:', saveError);
+      }
+
+      // Set deployment result
+      setDeploymentResult({
+        contractId: contractAddress,
+        address: contractAddress,
+        transactionHash: deploymentTx?.hash || '',
+        gasUsed: estimatedGas?.toString() || 'unknown',
+        status: 'success'
+      });
+      
+      showNotification(
+        `Contract deployed successfully to ${currentNetwork.displayName}! Address: ${contractAddress}`,
+        'success'
+      );
       onDeployed();
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Deployment error:', error);
-      showNotification(
-        error instanceof Error ? error.message : 'Failed to deploy contract',
-        'error'
-      );
+      let errorMessage = 'Failed to deploy contract';
+      
+      if (error.code === 'INSUFFICIENT_FUNDS') {
+        errorMessage = 'Insufficient funds for gas fees';
+      } else if (error.code === 'UNPREDICTABLE_GAS_LIMIT') {
+        errorMessage = 'Could not estimate gas. Contract may fail to deploy.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      showNotification(errorMessage, 'error');
     } finally {
       setDeploying(false);
     }
@@ -362,22 +437,29 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
                 </FormControl>
               </Grid>
 
-              {/* Subnet Selection */}
+              {/* Network Selection */}
               <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>Target Subnet</InputLabel>
-                  <Select
-                    value={deploymentForm.subnetId}
-                    label="Target Subnet"
-                    onChange={(e) => setDeploymentForm(prev => ({ ...prev, subnetId: e.target.value }))}
-                  >
-                    {subnets.filter(subnet => subnet.status === 'running').map((subnet) => (
-                      <MenuItem key={subnet.id} value={subnet.id}>
-                        {subnet.name} (Chain ID: {subnet.chainId})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Target Network
+                  </Typography>
+                  <NetworkSelector variant="select" showBalance />
+                  {chainId && (
+                    <Box mt={1}>
+                      <Alert severity={isL2Network(chainId) ? "success" : "info"} sx={{ mt: 1 }}>
+                        {isL2Network(chainId) ? (
+                          <Typography variant="caption">
+                            ✓ Layer 2 network selected - Lower gas fees and faster transactions
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption">
+                            Layer 1 network selected - High security, higher gas fees
+                          </Typography>
+                        )}
+                      </Alert>
+                    </Box>
+                  )}
+                </Box>
               </Grid>
 
               {/* Contract Name */}
@@ -424,7 +506,7 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
                   onChange={(e) => setDeploymentForm(prev => ({ ...prev, gasLimit: e.target.value }))}
                   type="number"
                 />
-                <Button size="small" onClick={estimateGas} sx={{ mt: 1 }}>
+                <Button size="small" onClick={estimateContractGas} sx={{ mt: 1 }}>
                   Estimate Gas
                 </Button>
               </Grid>
@@ -492,8 +574,8 @@ const DeployContractModal: React.FC<DeployContractModalProps> = ({
                       </ListItem>
                       <ListItem>
                         <ListItemText 
-                          primary="Target Subnet" 
-                          secondary={subnets.find(s => s.id === deploymentForm.subnetId)?.name || 'Unknown'} 
+                          primary="Target Network" 
+                          secondary={getCurrentNetwork?.()?.displayName || `Chain ID: ${chainId}`} 
                         />
                       </ListItem>
                       <ListItem>

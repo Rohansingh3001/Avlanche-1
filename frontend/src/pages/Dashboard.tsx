@@ -290,19 +290,32 @@ const Dashboard: React.FC = () => {
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
                         Create your first subnet to get started with your decentralized network.
                     </Typography>
-                    <Button
-                        variant="contained"
-                        size="large"
-                        startIcon={<AddIcon />}
-                        onClick={() => setCreateModalOpen(true)}
-                        sx={{
-                            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
-                            py: 1.5,
-                            px: 4
-                        }}
-                    >
-                        Create Your First Subnet
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <Button
+                            variant="contained"
+                            size="large"
+                            startIcon={<AddIcon />}
+                            onClick={() => setCreateModalOpen(true)}
+                            sx={{
+                                background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+                                py: 1.5,
+                                px: 4
+                            }}
+                        >
+                            Create Your First Subnet
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            size="large"
+                            onClick={() => navigate('/faucet')}
+                            sx={{
+                                py: 1.5,
+                                px: 4
+                            }}
+                        >
+                            Get Test Tokens
+                        </Button>
+                    </Box>
                 </Box>
             )}
 

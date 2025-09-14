@@ -34,18 +34,21 @@ import DeployContractModal from '../components/DeployContractModal';
 import ContractInteraction from '../components/ContractInteraction';
 import ContractTemplatesModal from '../components/ContractTemplatesModal';
 import { ContractTemplate } from '../data/contractTemplates';
+import apiService from '../services/api';
 
 interface Contract {
   id: string;
   name: string;
-  code: string;
+  source_code: string;
   abi?: any[];
   bytecode?: string;
   address?: string;
-  network?: string;
-  deployedAt?: string;
-  createdAt: string;
-  description?: string;
+  subnet_id?: string;
+  deployment_tx?: string;
+  status: 'uploaded' | 'compiled' | 'deployed' | 'failed';
+  created_at: string;
+  deployed_at?: string;
+  compiler_version?: string;
 }
 
 const Contracts: React.FC = () => {
@@ -68,13 +71,11 @@ const Contracts: React.FC = () => {
   const fetchContracts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/contracts');
-      if (response.ok) {
-        const data = await response.json();
-        setContracts(data);
-      }
-    } catch (error) {
-      showNotification('Failed to fetch contracts', 'error');
+      const result: any = await apiService.getContracts();
+      setContracts(result.data || []);
+    } catch (error: any) {
+      console.error('Error fetching contracts:', error);
+      showNotification(`Failed to fetch contracts: ${error.message}`, 'error');
     } finally {
       setLoading(false);
     }
@@ -86,18 +87,12 @@ const Contracts: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`/api/contracts/${contractId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        showNotification('Contract deleted successfully', 'success');
-        fetchContracts();
-      } else {
-        throw new Error('Failed to delete contract');
-      }
-    } catch (error) {
-      showNotification('Failed to delete contract', 'error');
+      await apiService.deleteContract(contractId);
+      showNotification('Contract deleted successfully', 'success');
+      fetchContracts();
+    } catch (error: any) {
+      console.error('Error deleting contract:', error);
+      showNotification(`Failed to delete contract: ${error.message}`, 'error');
     }
   };
 
@@ -138,9 +133,9 @@ const Contracts: React.FC = () => {
     const newContract: Contract = {
       id: '',
       name: template.name,
-      code: template.code,
-      createdAt: new Date().toISOString(),
-      description: template.description,
+      source_code: template.code,
+      status: 'uploaded',
+      created_at: new Date().toISOString(),
     };
     setSelectedContract(newContract);
     setEditorOpen(true);
@@ -154,6 +149,38 @@ const Contracts: React.FC = () => {
   const handleContractDeployed = () => {
     fetchContracts();
     setDeployModalOpen(false);
+  };
+
+  const handleCompileContract = async (contract: Contract) => {
+    try {
+      setLoading(true);
+      
+      // Compile the contract
+      const compileResult: any = await apiService.compileContract({
+        sourceCode: contract.source_code,
+        contractName: contract.name,
+      });
+      
+      // Update contract with compilation results
+      if (compileResult.data.contracts && Object.keys(compileResult.data.contracts).length > 0) {
+        const compiledContract = Object.values(compileResult.data.contracts)[0] as any;
+        
+        await apiService.updateContract(contract.id, {
+          abi: JSON.stringify(compiledContract.abi),
+          bytecode: compiledContract.bytecode,
+          status: 'compiled',
+          compiler_version: compileResult.data.compilerVersion,
+        });
+
+        showNotification('Contract compiled successfully', 'success');
+        fetchContracts();
+      }
+    } catch (error: any) {
+      console.error('Compilation error:', error);
+      showNotification(`Compilation failed: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -244,14 +271,20 @@ const Contracts: React.FC = () => {
                   }}
                 >
                   <CardContent sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="h6" gutterBottom>
                         {contract.name}
                       </Typography>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {contract.address && (
-                          <Chip label="Deployed" color="success" size="small" />
-                        )}
+                        <Chip 
+                          label={contract.status.charAt(0).toUpperCase() + contract.status.slice(1)} 
+                          color={
+                            contract.status === 'deployed' ? 'success' :
+                            contract.status === 'compiled' ? 'info' :
+                            contract.status === 'failed' ? 'error' : 'default'
+                          }
+                          size="small" 
+                        />
                         <IconButton
                           size="small"
                           onClick={(e) => handleOpenMenu(e, contract)}
@@ -259,16 +292,12 @@ const Contracts: React.FC = () => {
                           <MoreIcon />
                         </IconButton>
                       </Box>
-                    </Box>
-                    
-                    {contract.description && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                        {contract.description}
-                      </Typography>
-                    )}
+                    </Box>                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Status: {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                    </Typography>
                     
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Created: {new Date(contract.createdAt).toLocaleDateString()}
+                      Created: {new Date(contract.created_at).toLocaleDateString()}
                     </Typography>
                     
                     {contract.address && (
@@ -292,9 +321,9 @@ const Contracts: React.FC = () => {
                         >
                           {contract.address}
                         </Typography>
-                        {contract.network && (
+                        {contract.subnet_id && (
                           <Typography variant="body2" color="text.secondary">
-                            Network: {contract.network}
+                            Subnet ID: {contract.subnet_id}
                           </Typography>
                         )}
                       </>
@@ -310,7 +339,7 @@ const Contracts: React.FC = () => {
                       >
                         Edit
                       </Button>
-                      {contract.bytecode && !contract.address && (
+                      {contract.status === 'compiled' && !contract.address && (
                         <Button
                           size="small"
                           startIcon={<DeployIcon />}
@@ -318,6 +347,16 @@ const Contracts: React.FC = () => {
                           onClick={() => handleDeployContract(contract)}
                         >
                           Deploy
+                        </Button>
+                      )}
+                      {contract.status === 'uploaded' && (
+                        <Button
+                          size="small"
+                          startIcon={<CodeIcon />}
+                          color="secondary"
+                          onClick={() => handleCompileContract(contract)}
+                        >
+                          Compile
                         </Button>
                       )}
                       {contract.address && contract.abi && (
@@ -349,7 +388,13 @@ const Contracts: React.FC = () => {
           <EditIcon sx={{ mr: 1 }} />
           Edit Code
         </MenuItem>
-        {menuContract?.bytecode && !menuContract?.address && (
+        {menuContract?.status === 'uploaded' && (
+          <MenuItem onClick={() => menuContract && handleCompileContract(menuContract)}>
+            <CodeIcon sx={{ mr: 1 }} />
+            Compile Contract
+          </MenuItem>
+        )}
+        {menuContract?.status === 'compiled' && !menuContract?.address && (
           <MenuItem onClick={() => menuContract && handleDeployContract(menuContract)}>
             <DeployIcon sx={{ mr: 1 }} />
             Deploy Contract
@@ -379,7 +424,11 @@ const Contracts: React.FC = () => {
       <SolidityEditor
         open={editorOpen}
         onClose={() => setEditorOpen(false)}
-        contract={selectedContract}
+        contract={selectedContract ? {
+          id: selectedContract.id,
+          name: selectedContract.name,
+          code: selectedContract.source_code,
+        } : null}
         onSave={handleContractSaved}
       />
 
@@ -388,7 +437,13 @@ const Contracts: React.FC = () => {
         <DeployContractModal
           open={deployModalOpen}
           onClose={() => setDeployModalOpen(false)}
-          contract={selectedContract}
+          contract={{
+            id: selectedContract.id,
+            name: selectedContract.name,
+            code: selectedContract.source_code,
+            abi: selectedContract.abi,
+            bytecode: selectedContract.bytecode,
+          }}
           onDeployed={handleContractDeployed}
         />
       )}
@@ -403,7 +458,7 @@ const Contracts: React.FC = () => {
             name: selectedContract.name,
             address: selectedContract.address,
             abi: selectedContract.abi,
-            subnetName: selectedContract.network || 'Unknown',
+            subnetName: selectedContract.subnet_id || 'Unknown',
             chainId: 43114, // Default Avalanche mainnet chain ID
           }}
         />

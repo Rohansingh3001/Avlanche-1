@@ -81,6 +81,7 @@ class DatabaseService {
                 deployment_tx TEXT,
                 status TEXT DEFAULT 'pending',
                 created_at TEXT NOT NULL,
+                updated_at TEXT,
                 deployed_at TEXT,
                 FOREIGN KEY (subnet_id) REFERENCES subnets (id) ON DELETE CASCADE
             )

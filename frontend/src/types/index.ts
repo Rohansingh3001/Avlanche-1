@@ -110,6 +110,17 @@ export interface WalletContextType {
   disconnect: () => void;
   switchNetwork: (chainId: number) => Promise<void>;
   walletType?: 'core' | 'metamask' | null;
+  // Enhanced wallet properties
+  provider?: any;
+  signer?: any;
+  isLoading?: boolean;
+  error?: string | null;
+  getCurrentNetwork?: () => any;
+  getGasConfiguration?: () => any;
+  estimateGas?: (transaction: any) => Promise<bigint>;
+  sendTransaction?: (transaction: any) => Promise<any>;
+  addAvalancheNetwork?: (networkKey: string) => Promise<void>;
+  refreshBalance?: () => Promise<void>;
 }
 
 export interface WebSocketContextType {

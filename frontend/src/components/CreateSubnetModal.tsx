@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -24,6 +24,10 @@ import {
   useTheme,
   alpha,
   Grid,
+  Divider,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import {
   RocketLaunch,
@@ -32,8 +36,13 @@ import {
   Security,
   Code,
   NetworkCheck,
+  AccountBalanceWallet,
+  Warning,
+  Info,
 } from '@mui/icons-material';
 import { useNotification } from './NotificationProvider';
+import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
+import { ethers } from 'ethers';
 
 interface SubnetConfig {
   name: string;
@@ -60,8 +69,22 @@ interface CreateSubnetModalProps {
 const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, onSuccess }) => {
   const theme = useTheme();
   const { showSuccess, showError, showInfo } = useNotification();
+  const { 
+    isConnected, 
+    account, 
+    balance, 
+    chainId, 
+    connect, 
+    switchNetwork, 
+    getCurrentNetwork,
+    walletType,
+    isLoading: walletLoading
+  } = useEnhancedWallet();
+  
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [walletChecked, setWalletChecked] = useState(false);
+  const [sufficientFunds, setSufficientFunds] = useState(false);
   const [config, setConfig] = useState<SubnetConfig>({
     name: '',
     description: '',
@@ -79,6 +102,11 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
   });
 
   const steps = [
+    {
+      label: 'Wallet Connection',
+      description: 'Connect and validate your wallet',
+      icon: <AccountBalanceWallet />,
+    },
     {
       label: 'Basic Configuration',
       description: 'Set up your subnet basics',
@@ -100,6 +128,28 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
       icon: <RocketLaunch />,
     },
   ];
+
+  // Check wallet status and funds when modal opens
+  useEffect(() => {
+    if (open && isConnected && account && balance) {
+      setWalletChecked(true);
+      // Check if user has sufficient funds for subnet creation (minimum 1 AVAX)
+      const minRequiredBalance = 1.0;
+      setSufficientFunds(parseFloat(balance) >= minRequiredBalance);
+    } else if (open) {
+      setWalletChecked(false);
+      setSufficientFunds(false);
+    }
+  }, [open, isConnected, account, balance]);
+
+  // Reset modal state when closed
+  useEffect(() => {
+    if (!open) {
+      setActiveStep(0);
+      setWalletChecked(false);
+      setSufficientFunds(false);
+    }
+  }, [open]);
 
   const handleNext = () => {
     setActiveStep((prevActiveStep) => prevActiveStep + 1);
@@ -125,19 +175,64 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 0:
-        return config.name.length >= 3 && config.chainId.length > 0;
+        return isConnected && walletChecked && sufficientFunds;
       case 1:
-        return config.tokenName.length > 0 && config.tokenSymbol.length > 0;
+        return config.name.length >= 3 && config.chainId.length > 0;
       case 2:
+        return config.tokenName.length > 0 && config.tokenSymbol.length > 0;
+      case 3:
         return config.gasLimit.length > 0 && config.targetBlockRate.length > 0 && config.minStake.length > 0;
       default:
         return true;
     }
   };
 
+  const handleConnectWallet = async () => {
+    try {
+      await connect();
+      showSuccess('Wallet connected successfully!');
+    } catch (error) {
+      showError('Failed to connect wallet. Please try again.');
+    }
+  };
+
+  const handleSwitchNetwork = async (targetNetwork: string) => {
+    try {
+      let targetChainId: number;
+      switch (targetNetwork) {
+        case 'fuji':
+          targetChainId = 43113;
+          break;
+        case 'mainnet':
+          targetChainId = 43114;
+          break;
+        default:
+          targetChainId = 43113; // Default to Fuji
+      }
+      
+      await switchNetwork(targetChainId);
+      showSuccess(`Switched to ${targetNetwork} network`);
+    } catch (error) {
+      showError(`Failed to switch to ${targetNetwork} network`);
+    }
+  };
+
   const createSubnet = async () => {
     setLoading(true);
     try {
+      // Wallet validation
+      if (!isConnected || !account) {
+        throw new Error('Wallet must be connected to create a subnet');
+      }
+
+      if (!sufficientFunds) {
+        throw new Error('Insufficient AVAX balance for subnet creation');
+      }
+
+      if (chainId && ![43113, 43114].includes(chainId)) {
+        throw new Error('Please switch to Avalanche Fuji Testnet or Mainnet');
+      }
+
       // Basic validation
       if (!config.name || config.name.trim().length < 3) {
         throw new Error('Subnet name must be at least 3 characters long');
@@ -178,6 +273,13 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
         deployment: {
           target: config.network,
           autoStart: true
+        },
+        // Include wallet information for validation
+        walletInfo: {
+          address: account,
+          walletType: walletType,
+          chainId: chainId,
+          balance: balance
         }
       };
       
@@ -185,6 +287,7 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Wallet-Address': account, // Include wallet address in header for backend validation
         },
         body: JSON.stringify(subnetData),
       });
@@ -217,7 +320,7 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
         throw new Error('Invalid response format from server');
       }
       
-      showSuccess(`Subnet "${config.name}" created successfully!`);
+      showSuccess(`Subnet "${config.name}" created successfully! Wallet: ${account?.slice(0, 6)}...${account?.slice(-4)}`);
       onSuccess(result);
       onClose();
       handleReset();
@@ -233,6 +336,122 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
   const renderStepContent = (step: number) => {
     switch (step) {
       case 0:
+        return (
+          <Box sx={{ mt: 2 }}>
+            <Alert severity="info" sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Wallet Connection Required
+              </Typography>
+              <Typography variant="body2">
+                Creating a subnet requires a connected wallet to validate your identity and ensure you have sufficient funds for network fees.
+              </Typography>
+            </Alert>
+
+            {!isConnected ? (
+              <Card sx={{ mb: 2, p: 2, backgroundColor: alpha(theme.palette.warning.main, 0.1) }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Warning sx={{ mr: 1, color: theme.palette.warning.main }} />
+                  <Typography variant="h6">Wallet Not Connected</Typography>
+                </Box>
+                <Typography variant="body2" sx={{ mb: 2 }}>
+                  Please connect your wallet to continue with subnet creation.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={handleConnectWallet}
+                  disabled={walletLoading}
+                  startIcon={walletLoading ? <CircularProgress size={16} /> : <AccountBalanceWallet />}
+                >
+                  {walletLoading ? 'Connecting...' : 'Connect Wallet'}
+                </Button>
+              </Card>
+            ) : (
+              <Card sx={{ mb: 2, p: 2, backgroundColor: alpha(theme.palette.success.main, 0.1) }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <CheckCircle sx={{ mr: 1, color: theme.palette.success.main }} />
+                  <Typography variant="h6">Wallet Connected</Typography>
+                </Box>
+                
+                <Grid container spacing={2}>
+                  <Grid item xs={12}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon>
+                        <Info color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Wallet Address"
+                        secondary={
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {account}
+                          </Typography>
+                        }
+                      />
+                    </ListItem>
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon>
+                        <AccountBalanceWallet color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Balance"
+                        secondary={`${balance} AVAX`}
+                      />
+                    </ListItem>
+                  </Grid>
+                  
+                  <Grid item xs={6}>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon>
+                        <NetworkCheck color="primary" />
+                      </ListItemIcon>
+                      <ListItemText
+                        primary="Network"
+                        secondary={getCurrentNetwork && getCurrentNetwork()?.displayName || 'Unknown'}
+                      />
+                    </ListItem>
+                  </Grid>
+                </Grid>
+
+                {!sufficientFunds && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    <Typography variant="body2">
+                      <strong>Insufficient Funds:</strong> You need at least 1 AVAX to create a subnet. 
+                      Current balance: {balance} AVAX
+                    </Typography>
+                  </Alert>
+                )}
+
+                {chainId && ![43113, 43114].includes(chainId) && (
+                  <Alert severity="warning" sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      <strong>Network Warning:</strong> You're not on an Avalanche network. 
+                      Switch to Fuji Testnet or Mainnet for subnet creation.
+                    </Typography>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleSwitchNetwork('fuji')}
+                      sx={{ mr: 1 }}
+                    >
+                      Switch to Fuji
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleSwitchNetwork('mainnet')}
+                    >
+                      Switch to Mainnet
+                    </Button>
+                  </Alert>
+                )}
+              </Card>
+            )}
+          </Box>
+        );
+
+      case 1:
         return (
           <Box sx={{ mt: 2 }}>
             <TextField
@@ -278,7 +497,7 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
           </Box>
         );
 
-      case 1:
+      case 2:
         return (
           <Box sx={{ mt: 2 }}>
             <TextField
@@ -312,7 +531,7 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
           </Box>
         );
 
-      case 2:
+      case 3:
         return (
           <Box sx={{ mt: 2 }}>
             <Grid container spacing={2}>
@@ -385,12 +604,40 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
           </Box>
         );
 
-      case 3:
+      case 4:
         return (
           <Box sx={{ mt: 2 }}>
             <Alert severity="info" sx={{ mb: 2 }}>
               Review your configuration before creating the subnet. This process may take several minutes.
             </Alert>
+            
+            {/* Wallet Information */}
+            <Card sx={{ mb: 2, backgroundColor: alpha(theme.palette.primary.main, 0.1) }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AccountBalanceWallet sx={{ mr: 1 }} />
+                  Wallet Information
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" color="text.secondary">Connected Wallet</Typography>
+                    <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
+                      {account?.slice(0, 6)}...{account?.slice(-4)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Typography variant="body2" color="text.secondary">Balance</Typography>
+                    <Typography variant="body1">{balance} AVAX</Typography>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Typography variant="body2" color="text.secondary">Wallet Type</Typography>
+                    <Typography variant="body1">{walletType === 'core' ? 'Core Wallet' : 'MetaMask'}</Typography>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+
+            {/* Configuration Summary */}
             <Card sx={{ mb: 2 }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -418,6 +665,13 @@ const CreateSubnetModal: React.FC<CreateSubnetModalProps> = ({ open, onClose, on
                 </Typography>
               </CardContent>
             </Card>
+
+            {/* Final Checks */}
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              <Typography variant="body2">
+                <strong>Important:</strong> Subnet creation will incur network fees. Make sure you have sufficient AVAX balance and are connected to the correct network.
+              </Typography>
+            </Alert>
           </Box>
         );
 

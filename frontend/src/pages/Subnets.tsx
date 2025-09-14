@@ -47,6 +47,7 @@ import SubnetDetails from '../components/SubnetDetails';
 import EditSubnetSettings from '../components/EditSubnetSettings';
 import { useNotification } from '../components/NotificationProvider';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
 
 interface Subnet {
   id: string;
@@ -71,6 +72,7 @@ const Subnets: React.FC = () => {
   const theme = useTheme();
   const { showNotification } = useNotification();
   const { lastMessage, isConnected } = useWebSocket();
+  const { isConnected: walletConnected, account, balance } = useEnhancedWallet();
   const [subnets, setSubnets] = useState<Subnet[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -112,74 +114,14 @@ const Subnets: React.FC = () => {
         blocks: Math.floor(Math.random() * 500),
       }));
       
-      // If no real subnets exist, show mock data for demonstration
-      const mockSubnets: Subnet[] = transformedSubnets.length > 0 ? [] : [
-          {
-            id: '1',
-            name: 'DeFi Subnet',
-            description: 'Decentralized Finance applications subnet',
-            chainId: 12345,
-            vmType: 'EVM',
-            status: 'running',
-            network: 'fuji',
-            validators: 5,
-            blockTime: 2,
-            gasLimit: 8000000,
-            tokenSymbol: 'DEFI',
-            tokenName: 'DeFi Token',
-            createdAt: '2024-01-15',
-            lastActivity: '2 minutes ago',
-            transactions: 15420,
-            blocks: 8932,
-          },
-          {
-            id: '2',
-            name: 'Gaming Subnet',
-            description: 'High-performance gaming subnet',
-            chainId: 54321,
-            vmType: 'EVM',
-            status: 'stopped',
-            network: 'mainnet',
-            validators: 3,
-            blockTime: 1,
-            gasLimit: 15000000,
-            tokenSymbol: 'GAME',
-            tokenName: 'Gaming Token',
-            createdAt: '2024-02-01',
-            lastActivity: '1 hour ago',
-            transactions: 8750,
-            blocks: 4521,
-          },
-        ];
-        
-        // Combine real subnets with mock data if needed
-        setSubnets([...transformedSubnets, ...mockSubnets]);
+      // Only show real subnets once they exist
+      setSubnets(transformedSubnets);
       } catch (error) {
         console.error('Error fetching subnets:', error);
         showNotification('Failed to fetch subnets', 'error');
         
-        // Fallback to mock data on error
-        const fallbackMockSubnets: Subnet[] = [
-          {
-            id: '1',
-            name: 'DeFi Subnet',
-            description: 'Decentralized Finance applications subnet',
-            chainId: 12345,
-            vmType: 'EVM',
-            status: 'running',
-            network: 'fuji',
-            validators: 5,
-            blockTime: 2,
-            gasLimit: 8000000,
-            tokenSymbol: 'DEFI',
-            tokenName: 'DeFi Token',
-            createdAt: '2024-01-15',
-            lastActivity: '2 minutes ago',
-            transactions: 15420,
-            blocks: 8932,
-          },
-        ];
-        setSubnets(fallbackMockSubnets);
+        // On error, just set empty array - let user create real subnets
+        setSubnets([]);
       } finally {
         setLoading(false);
       }
@@ -375,19 +317,26 @@ const Subnets: React.FC = () => {
           </Button>
         </Box>
 
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<AddIcon />}
-          onClick={() => setCreateModalOpen(true)}
-          sx={{
-            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
-            py: 1.5,
-            px: 4,
-          }}
-        >
-          Create New Subnet
-        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {!walletConnected && (
+            <Alert severity="info" sx={{ flex: 1 }}>
+              Connect your wallet to create and manage subnets
+            </Alert>
+          )}
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateModalOpen(true)}
+            sx={{
+              background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+              py: 1.5,
+              px: 4,
+            }}
+          >
+            Create New Subnet
+          </Button>
+        </Box>
       </Box>
 
       {loading ? (

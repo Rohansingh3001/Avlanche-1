@@ -348,6 +348,44 @@ router.get('/:id/events',
 );
 
 /**
+ * PUT /api/contracts/:id
+ * Update contract
+ */
+router.put('/:id',
+    param('id').notEmpty().withMessage('Contract ID is required'),
+    body('abi').optional(),
+    body('bytecode').optional(),
+    body('status').optional().isIn(['uploaded', 'compiled', 'deployed', 'failed']),
+    body('compiler_version').optional(),
+    validateRequest,
+    async (req, res) => {
+        try {
+            const updateData = req.body;
+            const contractId = req.params.id;
+            
+            await ContractService.updateContract(contractId, updateData);
+            
+            const updatedContract = await ContractService.getContractById(contractId);
+            
+            res.json({
+                data: updatedContract,
+                message: 'Contract updated successfully',
+                timestamp: new Date().toISOString()
+            });
+        } catch (error) {
+            console.error('❌ Error updating contract:', error);
+            res.status(500).json({
+                error: {
+                    message: 'Failed to update contract',
+                    details: error.message,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+    }
+);
+
+/**
  * DELETE /api/contracts/:id
  * Delete contract
  */
