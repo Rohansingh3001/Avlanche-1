@@ -1,7 +1,5 @@
 # Avalanche Subnet Tooling Suite
 
-# Avalanche Subnet Tooling Suite
-
 A comprehensive toolkit for creating, deploying, and managing Avalanche subnets with an intuitive CLI wizard, real-time monitoring dashboard, and smart contract management capabilities.
 
 ## 🚀 Features
