@@ -6,6 +6,8 @@ import {
   CardContent,
   Typography,
   Alert,
+  CircularProgress,
+  Stack,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,6 +22,7 @@ import {
   AccountBalanceWallet as WalletIcon,
   Launch as LaunchIcon,
   Warning as WarningIcon,
+  Sync as SyncIcon,
 } from '@mui/icons-material';
 import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
 import { useNotification } from './NotificationProvider';
@@ -30,25 +33,25 @@ interface WalletConnectorProps {
   variant?: 'contained' | 'outlined' | 'text';
 }
 
-const WalletConnector: React.FC<WalletConnectorProps> = ({ 
-  onConnect, 
+const WalletConnector: React.FC<WalletConnectorProps> = ({
+  onConnect,
   size = 'medium',
-  variant = 'contained' 
+  variant = 'contained'
 }) => {
   const { showNotification } = useNotification();
-  const { 
-    isConnected, 
-    account, 
-    connect, 
-    disconnect, 
-    balance, 
+  const {
+    isConnected,
+    account,
+    connect,
+    disconnect,
+    balance,
     chainId,
     walletType,
     isLoading,
     error,
     refreshBalance
   } = useEnhancedWallet();
-  
+
   const [helpDialogOpen, setHelpDialogOpen] = useState(false);
 
   const handleConnect = async () => {
@@ -59,7 +62,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
     } catch (error: any) {
       console.error('Connection error:', error);
       showNotification(`Failed to connect wallet: ${error.message}`, 'error');
-      
+
       // Show help dialog if no wallet is detected
       if (error.message.includes('No supported wallet found')) {
         setHelpDialogOpen(true);
@@ -100,7 +103,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
               </Typography>
             </Box>
           </Box>
-          
+
           <Box mb={2}>
             <Typography variant="body2" color="text.secondary">
               Network: {getNetworkName(chainId)}
@@ -116,7 +119,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
                   onClick={refreshBalance}
                   sx={{ minWidth: 'auto', p: 0.5 }}
                 >
-                  🔄
+                  <SyncIcon />
                 </Button>
               )}
             </Box>
@@ -143,7 +146,7 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
             {error}
           </Alert>
         )}
-        
+
         <Button
           variant={variant}
           size={size}
@@ -200,9 +203,9 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
                 Install
               </Button>
             </ListItem>
-            
+
             <Divider />
-            
+
             <ListItem>
               <ListItemIcon>
                 <WalletIcon />
@@ -254,8 +257,8 @@ const WalletConnector: React.FC<WalletConnectorProps> = ({
           <Button onClick={() => setHelpDialogOpen(false)}>
             Close
           </Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={() => {
               setHelpDialogOpen(false);
               window.location.reload();

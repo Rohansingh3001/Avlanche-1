@@ -19,7 +19,7 @@ class ErrorBoundary extends React.Component {
       error: error,
       errorInfo: errorInfo
     });
-    
+
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
       console.error('ErrorBoundary caught an error:', error, errorInfo);
@@ -42,7 +42,7 @@ class ErrorBoundary extends React.Component {
           color: 'white'
         }}>
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-            🏔️ Something went wrong
+            Something went wrong
           </h1>
           <p style={{ fontSize: '1.1rem', marginBottom: '2rem', opacity: 0.8 }}>
             The Avalanche Subnet Tooling Suite encountered an unexpected error.
@@ -67,9 +67,9 @@ class ErrorBoundary extends React.Component {
               <summary style={{ cursor: 'pointer', marginBottom: '1rem' }}>
                 Error Details (Development)
               </summary>
-              <pre style={{ 
-                background: 'rgba(0,0,0,0.2)', 
-                padding: '1rem', 
+              <pre style={{
+                background: 'rgba(0,0,0,0.2)',
+                padding: '1rem',
                 borderRadius: '4px',
                 fontSize: '0.8rem',
                 overflow: 'auto'

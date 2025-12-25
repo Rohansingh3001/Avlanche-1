@@ -1,7 +1,7 @@
 {
   "name": "avalanche-subnet-cli",
   "version": "1.0.0",
-  "description": "Interactive CLI wizard for Avalanche subnet creation",
+  "description": "Interactive CLI wizard for Avalanche subnet creation and management",
   "main": "subnet-wizard.js",
   "bin": {
     "subnet-wizard": "./subnet-wizard.js"
@@ -10,8 +10,40 @@
     "start": "node subnet-wizard.js",
     "test": "jest"
   },
+  "keywords": [
+    "avalanche",
+    "subnet",
+    "blockchain",
+    "cli",
+    "wizard",
+    "evm",
+    "web3",
+    "cryptocurrency"
+  ],
+  "author": "Avalanche Subnet Tooling Suite",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/avalanche-subnet-tooling"
+  },
+  "homepage": "https://github.com/your-org/avalanche-subnet-tooling#readme",
+  "bugs": {
+    "url": "https://github.com/your-org/avalanche-subnet-tooling/issues"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "preferGlobal": true,
+  "files": [
+    "subnet-wizard.js",
+    "lib/",
+    "validators/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
-    "inquirer": "^9.2.7",
+    "inquirer": "^8.2.5",
     "chalk": "^4.1.2",
     "ora": "^5.4.1",
     "fs-extra": "^11.1.1",

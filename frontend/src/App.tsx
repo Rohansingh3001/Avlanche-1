@@ -1,4 +1,4 @@
-export {};
+export { };
 
 import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box, CircularProgress, AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
+import { Terrain as TerrainIcon } from '@mui/icons-material';
 
 // Contexts
 import { WalletProvider } from './contexts/WalletContext';
@@ -20,7 +21,7 @@ const Subnets = React.lazy(() => import('./pages/Subnets'));
 const Contracts = React.lazy(() => import('./pages/Contracts'));
 const Assets = React.lazy(() => import('./pages/Assets'));
 const Monitoring = React.lazy(() => import('./pages/Monitoring'));
-const CLIDocs = React.lazy(() => import('./pages/CLIDocs'));
+const CLIDocumentation = React.lazy(() => import('./pages/CLIDocumentation'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const WalletPage = React.lazy(() => import('./pages/WalletPage'));
 const FaucetPage = React.lazy(() => import('./pages/FaucetPage'));
@@ -80,15 +81,15 @@ const theme = createTheme({
   },
   typography: {
     fontFamily: '"Inter", "SF Pro Display", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: { 
+    h1: {
       fontWeight: 800,
       letterSpacing: '-0.02em',
     },
-    h2: { 
+    h2: {
       fontWeight: 700,
       letterSpacing: '-0.01em',
     },
-    h3: { 
+    h3: {
       fontWeight: 600,
       letterSpacing: '-0.01em',
     },
@@ -212,12 +213,12 @@ const LoadingFallback: React.FC = () => (
 // Simple Layout component
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  
+
   // Hide navigation on landing page
   if (location.pathname === '/') {
     return <>{children}</>;
   }
-  
+
   const navigationItems = [
     { label: 'Home', path: '/' },
     { label: 'Dashboard', path: '/dashboard' },
@@ -235,8 +236,8 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <Box>
       <AppBar position="static" sx={{ mb: 2 }}>
         <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            🏔️ Avalanche Subnet Tooling Suite
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+            <TerrainIcon /> Avalanche Subnet Tooling Suite
           </Typography>
           <Stack direction="row" spacing={2}>
             {navigationItems.map((item) => (
@@ -246,7 +247,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 to={item.path}
                 color="inherit"
                 variant={location.pathname === item.path ? "outlined" : "text"}
-                sx={{ 
+                sx={{
                   color: 'white',
                   borderColor: location.pathname === item.path ? 'white' : 'transparent'
                 }}
@@ -281,8 +282,8 @@ const App: React.FC = () => {
                         <Route path="/contracts" element={<Contracts />} />
                         <Route path="/assets" element={<Assets />} />
                         <Route path="/monitoring" element={<Monitoring />} />
-                        <Route path="/cli" element={<CLIDocs />} />
-                        <Route path="/cli-docs" element={<CLIDocs />} />
+                        <Route path="/cli" element={<CLIDocumentation />} />
+                        <Route path="/cli-docs" element={<CLIDocumentation />} />
                         <Route path="/faucet" element={<FaucetPage />} />
                         <Route path="/wallet" element={<WalletPage />} />
                         <Route path="/settings" element={<Settings />} />

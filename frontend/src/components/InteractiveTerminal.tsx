@@ -34,7 +34,7 @@ const terminalCommands: TerminalCommand[] = [
       "✓ Creating new subnet...",
       "✓ Generating genesis file...",
       "✓ Deploying to Fuji testnet...",
-      "🎉 Subnet created successfully!",
+      "[SUCCESS] Subnet created successfully!",
       "ID: 2bRCr6B4MiEfSjidDwxDpdCyviwnfUVqB2HGwhm947w9YYqb7"
     ],
     delay: 2000
@@ -52,7 +52,7 @@ const terminalCommands: TerminalCommand[] = [
   {
     command: "avalanche network status",
     output: [
-      "📊 Network Status:",
+      "[INFO] Network Status:",
       "• Validators: 1,247 active",
       "• Subnets: 42 deployed",
       "• TPS: 4,500+ transactions/sec",
@@ -75,23 +75,23 @@ export const InteractiveTerminal: React.FC = () => {
       for (let i = 0; i < terminalCommands.length; i++) {
         setCurrentCommandIndex(i);
         setIsTyping(true);
-        
+
         // Simulate typing delay
         await new Promise(resolve => setTimeout(resolve, 1000));
         setIsTyping(false);
-        
+
         // Show output line by line
         const command = terminalCommands[i];
         for (let j = 0; j < command.output.length; j++) {
           await new Promise(resolve => setTimeout(resolve, 300));
           setCurrentOutput(prev => [...prev, command.output[j]]);
         }
-        
+
         // Wait before next command
         await new Promise(resolve => setTimeout(resolve, command.delay || 2000));
         setCurrentOutput([]);
       }
-      
+
       // Restart the sequence
       setTimeout(() => {
         setCurrentCommandIndex(0);
@@ -217,7 +217,7 @@ export const InteractiveTerminal: React.FC = () => {
                 component="span"
                 sx={{
                   color: '#fff',
-                  animation: cmdIndex === currentCommandIndex && isTyping ? 
+                  animation: cmdIndex === currentCommandIndex && isTyping ?
                     `${typing} 1s ease-out` : 'none',
                   overflow: 'hidden',
                   whiteSpace: 'nowrap',
@@ -240,33 +240,33 @@ export const InteractiveTerminal: React.FC = () => {
             </Box>
 
             {/* Command Output */}
-            {(cmdIndex < currentCommandIndex || 
+            {(cmdIndex < currentCommandIndex ||
               (cmdIndex === currentCommandIndex && !isTyping)) && (
-              <Box sx={{ pl: 3 }}>
-                {(cmdIndex < currentCommandIndex ? cmd.output : currentOutput).map((line, lineIndex) => (
-                  <Typography
-                    key={lineIndex}
-                    sx={{
-                      color: line.includes('✓') ? '#28CA42' :
-                             line.includes('🎉') ? theme.palette.secondary.main :
-                             line.includes('📊') ? theme.palette.info.main :
-                             line.includes('•') ? theme.palette.primary.light :
-                             '#fff',
-                      mb: 0.5,
-                      opacity: 0,
-                      animation: 'fadeIn 0.5s ease-out forwards',
-                      animationDelay: `${lineIndex * 0.1}s`,
-                      '@keyframes fadeIn': {
-                        from: { opacity: 0, transform: 'translateY(10px)' },
-                        to: { opacity: 1, transform: 'translateY(0)' },
-                      },
-                    }}
-                  >
-                    {line}
-                  </Typography>
-                ))}
-              </Box>
-            )}
+                <Box sx={{ pl: 3 }}>
+                  {(cmdIndex < currentCommandIndex ? cmd.output : currentOutput).map((line, lineIndex) => (
+                    <Typography
+                      key={lineIndex}
+                      sx={{
+                        color: line.includes('✓') ? '#28CA42' :
+                          line.includes('[SUCCESS]') ? theme.palette.secondary.main :
+                            line.includes('[INFO]') ? theme.palette.info.main :
+                              line.includes('•') ? theme.palette.primary.light :
+                                '#fff',
+                        mb: 0.5,
+                        opacity: 0,
+                        animation: 'fadeIn 0.5s ease-out forwards',
+                        animationDelay: `${lineIndex * 0.1}s`,
+                        '@keyframes fadeIn': {
+                          from: { opacity: 0, transform: 'translateY(10px)' },
+                          to: { opacity: 1, transform: 'translateY(0)' },
+                        },
+                      }}
+                    >
+                      {line}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
           </Box>
         ))}
       </Box>

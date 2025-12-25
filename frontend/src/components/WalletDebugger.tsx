@@ -17,6 +17,9 @@ import {
 import {
   ExpandMore as ExpandMoreIcon,
   Settings as BugIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  HourglassEmpty as HourglassEmptyIcon,
 } from '@mui/icons-material';
 import { useEnhancedWallet } from '../contexts/EnhancedWalletContext';
 import { useNotification } from './NotificationProvider';
@@ -26,10 +29,6 @@ const WalletDebugger: React.FC = () => {
   const walletContext = useEnhancedWallet();
   const [testAddress, setTestAddress] = useState('0x3109390df94C5E032dEf00A7816FAa743E0BefE4');
   const [detectionResults, setDetectionResults] = useState<any>({});
-
-  useEffect(() => {
-    checkWalletDetection();
-  }, []);
 
   const checkWalletDetection = () => {
     const results = {
@@ -52,7 +51,15 @@ const WalletDebugger: React.FC = () => {
     setDetectionResults(results);
   };
 
+  useEffect(() => {
+    checkWalletDetection();
+  }, []);
+
   const testConnection = async () => {
+    if (!walletContext || !walletContext.connect) {
+      showNotification('Wallet context not available', 'error');
+      return;
+    }
     try {
       showNotification('Testing wallet connection...', 'info');
       await walletContext.connect();
@@ -88,25 +95,57 @@ const WalletDebugger: React.FC = () => {
               <ListItem>
                 <ListItemText
                   primary="Window.ethereum detected"
-                  secondary={detectionResults.windowEthereum ? '✅ Yes' : '❌ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {detectionResults.windowEthereum ? (
+                        <><CheckCircleIcon fontSize="small" color="success" /> Yes</>
+                      ) : (
+                        <><CancelIcon fontSize="small" color="error" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Window.avalanche detected"
-                  secondary={detectionResults.windowAvalanche ? '✅ Yes' : '❌ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {detectionResults.windowAvalanche ? (
+                        <><CheckCircleIcon fontSize="small" color="success" /> Yes</>
+                      ) : (
+                        <><CancelIcon fontSize="small" color="error" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Core Wallet detected"
-                  secondary={detectionResults.ethereumIsCoreWallet ? '✅ Yes' : '❌ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {detectionResults.ethereumIsCoreWallet ? (
+                        <><CheckCircleIcon fontSize="small" color="success" /> Yes</>
+                      ) : (
+                        <><CancelIcon fontSize="small" color="error" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="MetaMask detected"
-                  secondary={detectionResults.ethereumIsMetaMask ? '✅ Yes' : '❌ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {detectionResults.ethereumIsMetaMask ? (
+                        <><CheckCircleIcon fontSize="small" color="success" /> Yes</>
+                      ) : (
+                        <><CancelIcon fontSize="small" color="error" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
@@ -131,43 +170,59 @@ const WalletDebugger: React.FC = () => {
               <ListItem>
                 <ListItemText
                   primary="Connected"
-                  secondary={walletContext.isConnected ? '✅ Yes' : '❌ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {walletContext?.isConnected ? (
+                        <><CheckCircleIcon fontSize="small" color="success" /> Yes</>
+                      ) : (
+                        <><CancelIcon fontSize="small" color="error" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Account"
-                  secondary={walletContext.account || 'Not connected'}
+                  secondary={walletContext?.account || 'Not connected'}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Chain ID"
-                  secondary={walletContext.chainId || 'Unknown'}
+                  secondary={walletContext?.chainId || 'Unknown'}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Balance"
-                  secondary={walletContext.balance ? `${walletContext.balance} AVAX` : 'Not available'}
+                  secondary={walletContext?.balance ? `${walletContext.balance} AVAX` : 'Not available'}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Wallet Type"
-                  secondary={walletContext.walletType || 'None'}
+                  secondary={walletContext?.walletType || 'None'}
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Loading"
-                  secondary={walletContext.isLoading ? '⏳ Yes' : '✅ No'}
+                  secondary={
+                    <Box component="span" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      {walletContext?.isLoading ? (
+                        <><HourglassEmptyIcon fontSize="small" color="warning" /> Yes</>
+                      ) : (
+                        <><CheckCircleIcon fontSize="small" color="success" /> No</>
+                      )}
+                    </Box>
+                  }
                 />
               </ListItem>
               <ListItem>
                 <ListItemText
                   primary="Error"
-                  secondary={walletContext.error || 'None'}
+                  secondary={walletContext?.error || 'None'}
                 />
               </ListItem>
             </List>
@@ -183,7 +238,7 @@ const WalletDebugger: React.FC = () => {
               <Button variant="contained" onClick={testConnection}>
                 Test Connection
               </Button>
-              
+
               <Box>
                 <TextField
                   fullWidth
@@ -193,8 +248,8 @@ const WalletDebugger: React.FC = () => {
                   size="small"
                   helperText="Enter an Ethereum address to validate"
                 />
-                <Button 
-                  variant="outlined" 
+                <Button
+                  variant="outlined"
                   onClick={testManualAddress}
                   sx={{ mt: 1 }}
                   size="small"
@@ -203,8 +258,8 @@ const WalletDebugger: React.FC = () => {
                 </Button>
               </Box>
 
-              <Button 
-                variant="outlined" 
+              <Button
+                variant="outlined"
                 onClick={() => window.location.reload()}
                 color="warning"
               >
@@ -223,7 +278,7 @@ const WalletDebugger: React.FC = () => {
           </Alert>
         )}
 
-        {walletContext.error && (
+        {walletContext?.error && (
           <Alert severity="error" sx={{ mt: 2 }}>
             <Typography variant="body2">
               <strong>Wallet Error:</strong><br />

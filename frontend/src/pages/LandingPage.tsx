@@ -43,6 +43,8 @@ import {
   FlashOn,
   Shield,
   Layers,
+  RocketLaunch,
+  Terrain,
 } from '@mui/icons-material';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import InteractiveParticles from '../components/InteractiveParticles';
@@ -222,7 +224,7 @@ const LandingPage: React.FC = () => {
   return (
     <Box sx={{ position: 'relative', overflow: 'hidden' }}>
       <InteractiveParticles />
-      
+
       {/* Hero Section */}
       <Box
         sx={{
@@ -237,7 +239,8 @@ const LandingPage: React.FC = () => {
               <Fade in timeout={1000}>
                 <Box>
                   <Chip
-                    label="🚀 Now in Production"
+                    icon={<RocketLaunch />}
+                    label="Now in Production"
                     color="primary"
                     sx={{ mb: 2, fontWeight: 'bold' }}
                   />
@@ -293,7 +296,7 @@ const LandingPage: React.FC = () => {
                     color="text.secondary"
                     sx={{ mb: 4, maxWidth: '500px' }}
                   >
-                    The most advanced platform for creating, deploying, and managing custom blockchain networks on Avalanche. 
+                    The most advanced platform for creating, deploying, and managing custom blockchain networks on Avalanche.
                     Power your dApps with unlimited scalability and enterprise-grade infrastructure.
                   </Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -337,7 +340,7 @@ const LandingPage: React.FC = () => {
                   }}
                 >
                   {/* Terminal Demo */}
-                  <Terminal 
+                  <Terminal
                     commands={terminalCommands}
                     prompt="avalanche$"
                     typingSpeed={40}
@@ -365,7 +368,7 @@ const LandingPage: React.FC = () => {
             Built for developers, designed for scale. Experience the next generation of blockchain infrastructure.
           </Typography>
         </Box>
-        
+
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={4} key={index}>
@@ -386,7 +389,7 @@ const LandingPage: React.FC = () => {
               Everything you need to build and manage your blockchain infrastructure
             </Typography>
           </Box>
-          
+
           <Grid container spacing={3}>
             {tools.map((tool, index) => (
               <Grid item xs={12} sm={6} md={3} key={index}>
@@ -455,7 +458,7 @@ const LandingPage: React.FC = () => {
                 Ready to Build the Future?
               </Typography>
               <Typography variant="h6" sx={{ opacity: 0.9, mb: 3 }}>
-                Join thousands of developers already building on our platform. 
+                Join thousands of developers already building on our platform.
                 Start your blockchain journey today with our comprehensive tooling suite.
               </Typography>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -530,7 +533,7 @@ const LandingPage: React.FC = () => {
                     fontSize: '4rem',
                   }}
                 >
-                  🚀
+                  <RocketLaunch sx={{ fontSize: '4rem', color: 'white' }} />
                 </Box>
               </Box>
             </Grid>
@@ -543,11 +546,11 @@ const LandingPage: React.FC = () => {
         <Container maxWidth="lg">
           <Grid container spacing={4} alignItems="center">
             <Grid item xs={12} md={6}>
-              <Typography variant="h6" gutterBottom>
-                🏔️ Avalanche Subnet Tooling Suite
+              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Terrain /> Avalanche Subnet Tooling Suite
               </Typography>
               <Typography variant="body2" color="grey.400">
-                Empowering the next generation of blockchain applications with 
+                Empowering the next generation of blockchain applications with
                 enterprise-grade infrastructure and developer-friendly tools.
               </Typography>
             </Grid>

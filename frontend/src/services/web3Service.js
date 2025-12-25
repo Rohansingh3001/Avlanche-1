@@ -46,7 +46,7 @@ class Web3Service {
             this.chainId = Number(network.chainId);
             this.networkName = network.name;
 
-            console.log('✅ Wallet connected:', {
+            console.log('Wallet connected:', {
                 address: accounts[0],
                 chainId: this.chainId,
                 network: this.networkName
@@ -59,7 +59,7 @@ class Web3Service {
             };
 
         } catch (error) {
-            console.error('❌ Wallet connection failed:', error);
+            console.error('Wallet connection failed:', error);
             throw new Error(`Failed to connect wallet: ${error.message}`);
         }
     }
@@ -161,9 +161,9 @@ class Web3Service {
                 params: [networkConfig],
             });
 
-            console.log('✅ Network added successfully');
+            console.log('Network added successfully');
         } catch (error) {
-            console.error('❌ Failed to add network:', error);
+            console.error('Failed to add network:', error);
             throw error;
         }
     }
@@ -213,7 +213,7 @@ class Web3Service {
             const address = await contract.getAddress();
             const deploymentTx = contract.deploymentTransaction();
 
-            console.log('✅ Contract deployed:', {
+            console.log('Contract deployed:', {
                 address,
                 transactionHash: deploymentTx.hash
             });
@@ -225,7 +225,7 @@ class Web3Service {
             };
 
         } catch (error) {
-            console.error('❌ Contract deployment failed:', error);
+            console.error('Contract deployment failed:', error);
             throw error;
         }
     }
@@ -264,10 +264,10 @@ class Web3Service {
 
         try {
             const receipt = await this.provider.waitForTransaction(txHash, confirmations);
-            console.log('✅ Transaction confirmed:', receipt);
+            console.log('Transaction confirmed:', receipt);
             return receipt;
         } catch (error) {
-            console.error('❌ Transaction confirmation failed:', error);
+            console.error('Transaction confirmation failed:', error);
             throw error;
         }
     }

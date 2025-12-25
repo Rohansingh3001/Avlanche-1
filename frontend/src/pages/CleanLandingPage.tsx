@@ -114,7 +114,7 @@ const FeatureCard: React.FC<{
             }}
           />
         )}
-        
+
         <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
           <Box
             sx={{
@@ -136,7 +136,7 @@ const FeatureCard: React.FC<{
               {icon}
             </Avatar>
           </Box>
-          
+
           <Typography
             variant="h6"
             component="h3"
@@ -149,7 +149,7 @@ const FeatureCard: React.FC<{
           >
             {title}
           </Typography>
-          
+
           <Typography
             variant="body2"
             color="text.secondary"
@@ -161,7 +161,7 @@ const FeatureCard: React.FC<{
             {description}
           </Typography>
         </CardContent>
-        
+
         {/* Animated scanning line */}
         <Box
           sx={{
@@ -305,16 +305,16 @@ const CleanLandingPage: React.FC = () => {
     >
       {/* Enhanced Animated Background */}
       <AnimatedBackground />
-      
+
       {/* Interactive Particle System */}
-      <ParticleSystem 
+      <ParticleSystem
         particleCount={60}
         colors={[theme.palette.primary.main, theme.palette.secondary.main, '#7B68EE', '#32CD32']}
         speed={0.6}
         size={2}
         connections={true}
       />
-      
+
       {/* Animated Background Grid */}
       <Box
         sx={{
@@ -368,7 +368,7 @@ const CleanLandingPage: React.FC = () => {
           }}
         />
       ))}
-      
+
       {/* Hero Section */}
       <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 2 }}>
         <Box
@@ -381,7 +381,8 @@ const CleanLandingPage: React.FC = () => {
           <Fade in timeout={1000}>
             <Box>
               <Chip
-                label="🚀 Now Supporting Avalanche Durango"
+                icon={<RocketLaunch />}
+                label="Now Supporting Avalanche Durango"
                 variant="outlined"
                 sx={{
                   mb: 3,
@@ -391,7 +392,7 @@ const CleanLandingPage: React.FC = () => {
                   background: alpha(theme.palette.primary.main, 0.05),
                 }}
               />
-              
+
               <Typography
                 variant="h1"
                 sx={{
@@ -412,7 +413,7 @@ const CleanLandingPage: React.FC = () => {
               >
                 AVALANCHE
               </Typography>
-              
+
               <Typography
                 variant="h2"
                 sx={{
@@ -424,7 +425,7 @@ const CleanLandingPage: React.FC = () => {
               >
                 Subnet Infrastructure
               </Typography>
-              
+
               <Typography
                 variant="h5"
                 sx={{
@@ -436,10 +437,10 @@ const CleanLandingPage: React.FC = () => {
                   fontSize: { xs: '1.1rem', md: '1.3rem' },
                 }}
               >
-                Build, deploy, and scale Avalanche subnets with enterprise-grade tools, 
+                Build, deploy, and scale Avalanche subnets with enterprise-grade tools,
                 lightning-fast performance, and unmatched developer experience.
               </Typography>
-              
+
               <Stack
                 direction={{ xs: 'column', sm: 'row' }}
                 spacing={2}
@@ -467,7 +468,7 @@ const CleanLandingPage: React.FC = () => {
                 >
                   Get Started
                 </Button>
-                
+
                 <Button
                   variant="outlined"
                   size="large"
@@ -492,7 +493,7 @@ const CleanLandingPage: React.FC = () => {
               </Stack>
             </Box>
           </Fade>
-          
+
           {/* Stats Section */}
           <Grid container spacing={3} sx={{ mb: 8 }}>
             {stats.map((stat, index) => (
@@ -532,7 +533,7 @@ const CleanLandingPage: React.FC = () => {
             Everything you need to build and scale enterprise-grade blockchain applications
           </Typography>
         </Box>
-        
+
         <Grid container spacing={4}>
           {features.map((feature, index) => (
             <Grid item xs={12} md={6} lg={4} key={feature.title}>
@@ -571,7 +572,7 @@ const CleanLandingPage: React.FC = () => {
             Comprehensive toolkit for seamless development and deployment
           </Typography>
         </Box>
-        
+
         <Grid container spacing={4}>
           {tools.map((tool, index) => (
             <Grid item xs={12} md={4} key={tool.title}>
@@ -604,15 +605,15 @@ const CleanLandingPage: React.FC = () => {
                     >
                       {tool.icon}
                     </Avatar>
-                    
+
                     <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
                       {tool.title}
                     </Typography>
-                    
+
                     <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
                       {tool.description}
                     </Typography>
-                    
+
                     <Button
                       variant="outlined"
                       fullWidth
@@ -659,7 +660,7 @@ const CleanLandingPage: React.FC = () => {
             See how easy it is to create and deploy your own Avalanche subnet with our powerful CLI tools
           </Typography>
         </Box>
-        
+
         <InteractiveTerminal />
       </Container>
 
@@ -690,7 +691,7 @@ const CleanLandingPage: React.FC = () => {
           >
             Ready to Build the Future?
           </Typography>
-          
+
           <Typography
             variant="h6"
             color="text.secondary"
@@ -699,7 +700,7 @@ const CleanLandingPage: React.FC = () => {
             Join thousands of developers building the next generation of decentralized applications
             on Avalanche's robust subnet infrastructure.
           </Typography>
-          
+
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
             spacing={2}
@@ -722,7 +723,7 @@ const CleanLandingPage: React.FC = () => {
             >
               Start Building
             </Button>
-            
+
             <Button
               variant="outlined"
               size="large"
@@ -740,7 +741,7 @@ const CleanLandingPage: React.FC = () => {
               View on GitHub
             </Button>
           </Stack>
-          
+
           <Stack direction="row" spacing={2} justifyContent="center">
             <IconButton
               href="https://twitter.com"

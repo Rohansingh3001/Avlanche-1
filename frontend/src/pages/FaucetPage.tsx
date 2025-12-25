@@ -172,8 +172,8 @@ const FaucetPage: React.FC = () => {
                   </Avatar>
                   <Box>
                     <Typography variant="h6">Wallet Status</Typography>
-                    <Chip 
-                      label="Disconnected" 
+                    <Chip
+                      label="Disconnected"
                       color="default"
                       size="small"
                     />
@@ -186,8 +186,8 @@ const FaucetPage: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <BalanceDisplay 
-              showRefresh={true} 
+            <BalanceDisplay
+              showRefresh={true}
               showTokens={true}
               onBalanceClick={(symbol, balance) => {
                 showNotification(`${symbol} Balance: ${balance}`, 'info');
@@ -214,7 +214,7 @@ const FaucetPage: React.FC = () => {
                   { symbol: 'WAVAX', name: 'Wrapped AVAX', amount: '5', network: 'Fuji Testnet' },
                   { symbol: 'TEST', name: 'Test Token', amount: '10000', network: 'Local Subnet' },
                 ].map((token) => (
-                  <Box 
+                  <Box
                     key={token.symbol}
                     sx={{
                       display: 'flex',
@@ -296,10 +296,10 @@ const FaucetPage: React.FC = () => {
           </Card>
         </Grid>
 
-        {/* Wallet Debugger - for troubleshooting */}
-        <Grid item xs={12}>
+        {/* Wallet Debugger - temporarily disabled due to context issues */}
+        {/* <Grid item xs={12}>
           <WalletDebugger />
-        </Grid>
+        </Grid> */}
 
         {/* Recent Faucet Activity */}
         {recentTransactions.length > 0 && (

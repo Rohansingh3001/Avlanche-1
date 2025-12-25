@@ -142,7 +142,7 @@ const FeatureCard: React.FC<{
             }}
           />
         )}
-        
+
         <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
           <Box
             sx={{
@@ -164,7 +164,7 @@ const FeatureCard: React.FC<{
               {icon}
             </Avatar>
           </Box>
-          
+
           <Typography
             variant="h6"
             component="h3"
@@ -177,7 +177,7 @@ const FeatureCard: React.FC<{
           >
             {title}
           </Typography>
-          
+
           <Typography
             variant="body2"
             color="text.secondary"
@@ -189,7 +189,7 @@ const FeatureCard: React.FC<{
             {description}
           </Typography>
         </CardContent>
-        
+
         {/* Animated scanning line */}
         <Box
           sx={{
@@ -257,7 +257,7 @@ const StatCounter: React.FC<{
 const EnhancedLandingPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  
+
   const handleGetStarted = () => {
     navigate('/dashboard');
   };
@@ -340,303 +340,303 @@ const EnhancedLandingPage: React.FC = () => {
       >
         {/* Interactive Background */}
         <InteractiveParticles />
-        
+
         {/* Animated Hero Section */}
-        <AnimatedHeroSection 
+        <AnimatedHeroSection
           onGetStarted={handleGetStarted}
           onTryDemo={handleTryDemo}
         />
-        
+
         {/* Floating Action Menu */}
         <FloatingActionMenu />
 
-      {/* Features Section */}
-      <Container maxWidth="xl" sx={{ py: 8 }}>
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography
-            variant="h3"
-            component="h2"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            Powerful Features
-          </Typography>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
-          >
-            Everything you need to build and scale enterprise-grade blockchain applications
-          </Typography>
-        </Box>
-        
-        <Grid container spacing={4}>
-          {features.map((feature, index) => (
-            <Grid key={feature.title} xs={12} md={6} lg={4}>
-              <FeatureCard
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-                delay={index * 100}
-                featured={feature.featured}
-              />
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* Tools Section */}
-      <Container maxWidth="xl" sx={{ py: 8 }}>
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography
-            variant="h3"
-            component="h2"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            Developer Tools
-          </Typography>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
-          >
-            Comprehensive toolkit for seamless development and deployment
-          </Typography>
-        </Box>
-        
-        <Grid container spacing={4}>
-          {tools.map((tool, index) => (
-            <Grid key={tool.title} xs={12} md={4}>
-              <Grow in timeout={1000} style={{ transitionDelay: `${index * 200}ms` }}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.4)} 100%)`,
-                    backdropFilter: 'blur(20px)',
-                    border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    borderRadius: 3,
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.2)}`,
-                    },
-                  }}
-                  onClick={tool.action}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        color: theme.palette.primary.main,
-                        width: 64,
-                        height: 64,
-                        mb: 2,
-                      }}
-                    >
-                      {tool.icon}
-                    </Avatar>
-                    
-                    <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
-                      {tool.title}
-                    </Typography>
-                    
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
-                      {tool.description}
-                    </Typography>
-                  </CardContent>
-                  
-                  <CardActions sx={{ p: 3, pt: 0 }}>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      endIcon={<ArrowForward />}
-                      sx={{
-                        borderRadius: 2,
-                        '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                        },
-                      }}
-                    >
-                      Explore
-                    </Button>
-                  </CardActions>
-                </Card>
-              </Grow>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-
-      {/* Terminal Demo Section */}
-      <Container maxWidth="xl" sx={{ py: 8 }}>
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography
-            variant="h3"
-            component="h2"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-              mb: 2,
-            }}
-          >
-            See It In Action
-          </Typography>
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
-          >
-            Experience the power of our CLI tool with real-time subnet creation
-          </Typography>
-        </Box>
-        
-        <Fade in timeout={1500}>
-          <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
-            <Terminal 
-              commands={[
-                'npm install -g @avalabs/subnet-cli',
-                'subnet-wizard create mySubnet',
-                'Selected template: DeFi Protocol',
-                '✓ Subnet configuration complete',
-                '✓ Smart contracts deployed',
-                '✓ Validators configured',
-                '🚀 Subnet mySubnet is live!'
-              ]}
-            />
+        {/* Features Section */}
+        <Container maxWidth="xl" sx={{ py: 8 }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                mb: 2,
+              }}
+            >
+              Powerful Features
+            </Typography>
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
+            >
+              Everything you need to build and scale enterprise-grade blockchain applications
+            </Typography>
           </Box>
-        </Fade>
-      </Container>
 
-      {/* CTA Section */}
-      <Container maxWidth="xl" sx={{ py: 8 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 6,
-            textAlign: 'center',
-            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
-            backdropFilter: 'blur(20px)',
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-            borderRadius: 4,
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <Typography
-            variant="h3"
-            component="h2"
-            gutterBottom
+          <Grid container spacing={4}>
+            {features.map((feature, index) => (
+              <Grid key={feature.title} xs={12} md={6} lg={4}>
+                <FeatureCard
+                  icon={feature.icon}
+                  title={feature.title}
+                  description={feature.description}
+                  delay={index * 100}
+                  featured={feature.featured}
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+
+        {/* Tools Section */}
+        <Container maxWidth="xl" sx={{ py: 8 }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                mb: 2,
+              }}
+            >
+              Developer Tools
+            </Typography>
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
+            >
+              Comprehensive toolkit for seamless development and deployment
+            </Typography>
+          </Box>
+
+          <Grid container spacing={4}>
+            {tools.map((tool, index) => (
+              <Grid key={tool.title} xs={12} md={4}>
+                <Grow in timeout={1000} style={{ transitionDelay: `${index * 200}ms` }}>
+                  <Card
+                    sx={{
+                      height: '100%',
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${alpha(theme.palette.background.paper, 0.4)} 100%)`,
+                      backdropFilter: 'blur(20px)',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                      borderRadius: 3,
+                      transition: 'all 0.3s ease',
+                      cursor: 'pointer',
+                      '&:hover': {
+                        transform: 'translateY(-8px)',
+                        boxShadow: `0 20px 40px ${alpha(theme.palette.primary.main, 0.2)}`,
+                      },
+                    }}
+                    onClick={tool.action}
+                  >
+                    <CardContent sx={{ p: 3 }}>
+                      <Avatar
+                        sx={{
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          color: theme.palette.primary.main,
+                          width: 64,
+                          height: 64,
+                          mb: 2,
+                        }}
+                      >
+                        {tool.icon}
+                      </Avatar>
+
+                      <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+                        {tool.title}
+                      </Typography>
+
+                      <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
+                        {tool.description}
+                      </Typography>
+                    </CardContent>
+
+                    <CardActions sx={{ p: 3, pt: 0 }}>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        endIcon={<ArrowForward />}
+                        sx={{
+                          borderRadius: 2,
+                          '&:hover': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                          },
+                        }}
+                      >
+                        Explore
+                      </Button>
+                    </CardActions>
+                  </Card>
+                </Grow>
+              </Grid>
+            ))}
+          </Grid>
+        </Container>
+
+        {/* Terminal Demo Section */}
+        <Container maxWidth="xl" sx={{ py: 8 }}>
+          <Box sx={{ textAlign: 'center', mb: 6 }}>
+            <Typography
+              variant="h3"
+              component="h2"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                mb: 2,
+              }}
+            >
+              See It In Action
+            </Typography>
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ maxWidth: '600px', mx: 'auto', lineHeight: 1.6 }}
+            >
+              Experience the power of our CLI tool with real-time subnet creation
+            </Typography>
+          </Box>
+
+          <Fade in timeout={1500}>
+            <Box sx={{ maxWidth: '800px', mx: 'auto' }}>
+              <Terminal
+                commands={[
+                  'npm install -g @avalabs/subnet-cli',
+                  'subnet-wizard create mySubnet',
+                  'Selected template: DeFi Protocol',
+                  '✓ Subnet configuration complete',
+                  '✓ Smart contracts deployed',
+                  '✓ Validators configured',
+                  'Subnet mySubnet is live!'
+                ]}
+              />
+            </Box>
+          </Fade>
+        </Container>
+
+        {/* CTA Section */}
+        <Container maxWidth="xl" sx={{ py: 8 }}>
+          <Paper
+            elevation={0}
             sx={{
-              fontWeight: 700,
-              color: theme.palette.text.primary,
-              mb: 2,
+              p: 6,
+              textAlign: 'center',
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.05)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+              backdropFilter: 'blur(20px)',
+              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              borderRadius: 4,
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            Ready to Build the Future?
-          </Typography>
-          
-          <Typography
-            variant="h6"
-            color="text.secondary"
-            sx={{ mb: 4, maxWidth: '600px', mx: 'auto' }}
-          >
-            Join thousands of developers building the next generation of decentralized applications
-            on Avalanche's robust subnet infrastructure.
-          </Typography>
-          
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={2}
-            justifyContent="center"
-            sx={{ mb: 4 }}
-          >
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<Rocket />}
-              onClick={() => navigate('/dashboard')}
+            <Typography
+              variant="h3"
+              component="h2"
+              gutterBottom
               sx={{
-                px: 4,
-                py: 1.5,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                borderRadius: 2,
-                background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                fontWeight: 700,
+                color: theme.palette.text.primary,
+                mb: 2,
               }}
             >
-              Start Building
-            </Button>
-            
-            <Button
-              variant="outlined"
-              size="large"
-              startIcon={<GitHub />}
-              href="https://github.com"
-              target="_blank"
-              sx={{
-                px: 4,
-                py: 1.5,
-                fontSize: '1.1rem',
-                fontWeight: 600,
-                borderRadius: 2,
-              }}
+              Ready to Build the Future?
+            </Typography>
+
+            <Typography
+              variant="h6"
+              color="text.secondary"
+              sx={{ mb: 4, maxWidth: '600px', mx: 'auto' }}
             >
-              View on GitHub
-            </Button>
-          </Stack>
-          
-          <Stack direction="row" spacing={2} justifyContent="center">
-            <IconButton
-              href="https://twitter.com"
-              target="_blank"
-              sx={{
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                },
-              }}
+              Join thousands of developers building the next generation of decentralized applications
+              on Avalanche's robust subnet infrastructure.
+            </Typography>
+
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              justifyContent="center"
+              sx={{ mb: 4 }}
             >
-              <Twitter />
-            </IconButton>
-            <IconButton
-              href="https://linkedin.com"
-              target="_blank"
-              sx={{
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                },
-              }}
-            >
-              <LinkedIn />
-            </IconButton>
-            <IconButton
-              href="https://github.com"
-              target="_blank"
-              sx={{
-                color: theme.palette.primary.main,
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                },
-              }}
-            >
-              <GitHub />
-            </IconButton>
-          </Stack>
-        </Paper>
-      </Container>
-    </Box>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<Rocket />}
+                onClick={() => navigate('/dashboard')}
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                  background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                }}
+              >
+                Start Building
+              </Button>
+
+              <Button
+                variant="outlined"
+                size="large"
+                startIcon={<GitHub />}
+                href="https://github.com"
+                target="_blank"
+                sx={{
+                  px: 4,
+                  py: 1.5,
+                  fontSize: '1.1rem',
+                  fontWeight: 600,
+                  borderRadius: 2,
+                }}
+              >
+                View on GitHub
+              </Button>
+            </Stack>
+
+            <Stack direction="row" spacing={2} justifyContent="center">
+              <IconButton
+                href="https://twitter.com"
+                target="_blank"
+                sx={{
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <Twitter />
+              </IconButton>
+              <IconButton
+                href="https://linkedin.com"
+                target="_blank"
+                sx={{
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <LinkedIn />
+              </IconButton>
+              <IconButton
+                href="https://github.com"
+                target="_blank"
+                sx={{
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  },
+                }}
+              >
+                <GitHub />
+              </IconButton>
+            </Stack>
+          </Paper>
+        </Container>
+      </Box>
     </NotificationProvider>
   );
 };

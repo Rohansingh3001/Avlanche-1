@@ -10,7 +10,7 @@ const { validateSubnetName, validateChainId, validateNetworkSettings } = require
 
 console.log(chalk.cyan.bold(`
 ╔═══════════════════════════════════════╗
-║     🏔️  Avalanche Subnet Wizard      ║
+║       Avalanche Subnet Wizard         ║
 ║     Create & Deploy Custom Subnets    ║
 ╚═══════════════════════════════════════╝
 `));
@@ -21,7 +21,7 @@ async function main() {
         console.log(chalk.gray('This wizard will help you create and configure a custom Avalanche subnet.\n'));
 
         // Step 1: Basic Subnet Information
-        console.log(chalk.yellow('📋 Step 1: Basic Subnet Information'));
+        console.log(chalk.yellow('[1/5] Basic Subnet Information'));
         const basicInfo = await inquirer.prompt([
             {
                 type: 'input',
@@ -31,7 +31,7 @@ async function main() {
                 filter: (input) => input.trim().toLowerCase().replace(/\s+/g, '-')
             },
             {
-                type: 'input', 
+                type: 'input',
                 name: 'description',
                 message: 'Enter subnet description:',
                 default: 'Custom Avalanche subnet'
@@ -50,7 +50,7 @@ async function main() {
         ]);
 
         // Step 2: Network Configuration
-        console.log(chalk.yellow('\n🌐 Step 2: Network Configuration'));
+        console.log(chalk.yellow('\n[2/5] Network Configuration'));
         const networkConfig = await inquirer.prompt([
             {
                 type: 'input',
@@ -77,7 +77,7 @@ async function main() {
         // Step 3: Token Configuration (if SubnetEVM)
         let tokenConfig = {};
         if (basicInfo.vmType === 'SubnetEVM') {
-            console.log(chalk.yellow('\n💰 Step 3: Native Token Configuration'));
+            console.log(chalk.yellow('\n[3/5] Native Token Configuration'));
             tokenConfig = await inquirer.prompt([
                 {
                     type: 'input',
@@ -110,7 +110,7 @@ async function main() {
         }
 
         // Step 4: Validator Configuration
-        console.log(chalk.yellow('\n👥 Step 4: Initial Validator Configuration'));
+        console.log(chalk.yellow('\n[4/5] Initial Validator Configuration'));
         const validatorConfig = await inquirer.prompt([
             {
                 type: 'input',
@@ -143,7 +143,7 @@ async function main() {
         ]);
 
         // Step 5: Deployment Options
-        console.log(chalk.yellow('\n🚀 Step 5: Deployment Configuration'));
+        console.log(chalk.yellow('\n[5/5] Deployment Configuration'));
         const deploymentConfig = await inquirer.prompt([
             {
                 type: 'list',
@@ -184,7 +184,7 @@ async function main() {
 
         // Generate configuration files
         const spinner = ora('Generating subnet configuration files...').start();
-        
+
         try {
             const outputDir = path.join(process.cwd(), 'subnets', config.basic.subnetName);
             await fs.ensureDir(outputDir);
@@ -210,9 +210,9 @@ async function main() {
 
             spinner.succeed('Configuration files generated successfully!');
 
-            console.log(chalk.green('\n✅ Subnet configuration completed!'));
-            console.log(chalk.cyan('\n📁 Generated files:'));
-            console.log(chalk.gray(`   📂 ${outputDir}/`));
+            console.log(chalk.green('\n[SUCCESS] Subnet configuration completed!'));
+            console.log(chalk.cyan('\nGenerated files:'));
+            console.log(chalk.gray(`   - ${outputDir}/`));
             console.log(chalk.gray(`   ├── genesis.json`));
             console.log(chalk.gray(`   ├── subnet-config.json`));
             console.log(chalk.gray(`   ├── deploy.sh`));
@@ -233,7 +233,7 @@ async function main() {
                 }
             }
 
-            console.log(chalk.green('\n🎉 Subnet wizard completed successfully!'));
+            console.log(chalk.green('\n[DONE] Subnet wizard completed successfully!'));
             console.log(chalk.cyan('\nNext steps:'));
             console.log(chalk.gray(`1. Review configuration in: ${outputDir}`));
             console.log(chalk.gray(`2. Deploy: bash ${path.join(outputDir, 'deploy.sh')}`));
@@ -245,18 +245,18 @@ async function main() {
         }
 
     } catch (error) {
-        console.error(chalk.red('\n❌ Error:'), error.message);
+        console.error(chalk.red('\n[ERROR]'), error.message);
         process.exit(1);
     }
 }
 
 async function deploySubnet(config, outputDir) {
     const deploySpinner = ora(`Deploying subnet to ${config.deployment.deploymentTarget}...`).start();
-    
+
     try {
         const { spawn } = require('child_process');
         const deployScript = path.join(outputDir, 'deploy.sh');
-        
+
         const deployment = spawn('bash', [deployScript], {
             stdio: 'pipe',
             cwd: outputDir
@@ -274,8 +274,8 @@ async function deploySubnet(config, outputDir) {
         deployment.on('close', (code) => {
             if (code === 0) {
                 deploySpinner.succeed('Subnet deployed successfully!');
-                console.log(chalk.green('\n🌐 Deployment Details:'));
-                
+                console.log(chalk.green('\nDeployment Details:'));
+
                 // Parse deployment output for important information
                 const lines = output.split('\n');
                 lines.forEach(line => {
@@ -283,7 +283,7 @@ async function deploySubnet(config, outputDir) {
                         console.log(chalk.cyan(`   ${line.trim()}`));
                     }
                 });
-                
+
             } else {
                 deploySpinner.fail('Deployment failed');
                 console.log(chalk.red('Deployment output:'));
