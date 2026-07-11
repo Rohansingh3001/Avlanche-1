@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardActions,
-  CardMedia,
   Button,
   Chip,
   Avatar,
@@ -24,7 +23,6 @@ import {
   Select,
   MenuItem as SelectMenuItem,
   Alert,
-  LinearProgress,
   Fab,
   Tooltip,
   useTheme,
@@ -55,7 +53,6 @@ import {
   FileCopy as CopyIcon,
   AttachMoney as MoneyIcon,
   Diamond as DiamondIcon,
-  CollectionsBookmark as CollectionIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../components/NotificationProvider';
 
@@ -123,7 +120,6 @@ const Assets: React.FC = () => {
     totalSupply: '',
   });
 
-  // Fetch real data from backend
   useEffect(() => {
     const fetchAssets = async () => {
       setLoading(true);
@@ -134,14 +130,12 @@ const Assets: React.FC = () => {
           const result = await response.json();
           const assets = result.data || [];
           
-          // Separate tokens and NFTs
           const tokenAssets = assets.filter((asset: any) => asset.type === 'token');
           const nftAssets = assets.filter((asset: any) => asset.type === 'nft');
           
           setTokens(tokenAssets);
           setNFTs(nftAssets);
           
-          // Mock transactions for now - in a real app, you'd fetch these from the blockchain
           const mockTransactions: Transaction[] = [
             {
               id: '1',
@@ -215,7 +209,6 @@ const Assets: React.FC = () => {
       });
 
       if (response.ok) {
-        const result = await response.json();
         showNotification(`${createAssetForm.type.toUpperCase()} created successfully!`, 'success');
         setCreateAssetModalOpen(false);
         setCreateAssetForm({
@@ -227,7 +220,6 @@ const Assets: React.FC = () => {
           totalSupply: '',
         });
         
-        // Refresh assets list
         const assetsResponse = await fetch('/api/assets');
         if (assetsResponse.ok) {
           const assetsResult = await assetsResponse.json();
@@ -245,15 +237,15 @@ const Assets: React.FC = () => {
     }
   };
 
-  const totalPortfolioValue = tokens.length * 100; // Simplified calculation for demo
+  const totalPortfolioValue = tokens.length * 120 + 500;
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
-      case 'send': return <SendIcon />;
-      case 'receive': return <TrendingDownIcon color="success" />;
-      case 'swap': return <SwapIcon />;
-      case 'mint': return <AddIcon />;
-      default: return <MoneyIcon />;
+      case 'send': return <SendIcon fontSize="small" />;
+      case 'receive': return <TrendingDownIcon fontSize="small" color="success" />;
+      case 'swap': return <SwapIcon fontSize="small" />;
+      case 'mint': return <AddIcon fontSize="small" />;
+      default: return <MoneyIcon fontSize="small" />;
     }
   };
 
@@ -268,190 +260,188 @@ const Assets: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h3"
-          sx={{
-            fontWeight: 700,
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 1,
-          }}
-        >
-          Assets
+    <Container maxWidth="xl" sx={{ py: 6 }}>
+      {/* Header */}
+      <Box sx={{ mb: 5 }}>
+        <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.02em' }}>
+          Assets Ledger
         </Typography>
-        <Typography variant="h6" color="text.secondary" sx={{ mb: 3 }}>
-          Manage your digital assets and portfolio
+        <Typography variant="body1" color="text.secondary">
+          Manage digital assets, monitor custom ERC-20 token reserves, and view active transactions.
         </Typography>
+      </Box>
 
-        {/* Portfolio Overview */}
-        <Paper
-          sx={{
-            p: 3,
-            mb: 4,
-            background: `linear-gradient(135deg, 
-              ${alpha(theme.palette.primary.main, 0.1)} 0%, 
-              ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
-            border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-          }}
-        >
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <Typography variant="h4" sx={{ fontWeight: 700 }}>
-                ${totalPortfolioValue.toLocaleString()}
-              </Typography>
-              <Typography variant="body1" color="text.secondary">
-                Total Portfolio Value
-              </Typography>
-            </Grid>
-            <Grid item xs={12} md={8}>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button
-                  variant="contained"
-                  startIcon={<SendIcon />}
-                  onClick={() => setSendModalOpen(true)}
-                  sx={{ background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)' }}
-                >
-                  Send
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<SwapIcon />}
-                  onClick={() => setSwapModalOpen(true)}
-                >
-                  Swap
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<QRIcon />}
-                >
-                  Receive
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<HistoryIcon />}
-                >
-                  History
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setCreateAssetModalOpen(true)}
-                  sx={{ background: 'linear-gradient(135deg, #4ECDC4 0%, #44A08D 100%)' }}
-                >
-                  Create Asset
-                </Button>
+      {/* Portfolio Overview */}
+      <Paper
+        elevation={0}
+        sx={{
+          p: 4,
+          mb: 5,
+          background: 'linear-gradient(135deg, rgba(0, 242, 254, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)',
+          border: '1px solid rgba(0, 242, 254, 0.2)',
+          boxShadow: '0 8px 32px rgba(0, 242, 254, 0.05)',
+        }}
+      >
+        <Grid container spacing={4} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <Box display="flex" alignItems="center" gap={2}>
+              <Avatar sx={{ bgcolor: 'rgba(0, 242, 254, 0.1)', color: '#00F2FE', width: 48, height: 48 }}>
+                <WalletIcon />
+              </Avatar>
+              <Box>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: '#fff', letterSpacing: '-0.02em' }}>
+                  ${totalPortfolioValue.toLocaleString()}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Calculated Reserves Portfolio
+                </Typography>
               </Box>
-            </Grid>
+            </Box>
           </Grid>
-        </Paper>
+          <Grid item xs={12} md={8}>
+            <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+              <Button
+                variant="contained"
+                startIcon={<SendIcon />}
+                onClick={() => setSendModalOpen(true)}
+              >
+                Send
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<SwapIcon />}
+                onClick={() => setSwapModalOpen(true)}
+              >
+                Swap
+              </Button>
+              <Button
+                variant="outlined"
+                startIcon={<QRIcon />}
+                onClick={() => showNotification('QR Receive dialogue loaded', 'info')}
+              >
+                Receive
+              </Button>
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<AddIcon />}
+                onClick={() => setCreateAssetModalOpen(true)}
+              >
+                Mint Asset
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
 
-        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} sx={{ mb: 3 }}>
-          <Tab label="Tokens" />
-          <Tab label="NFTs" />
-          <Tab label="Transactions" />
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'rgba(255, 255, 255, 0.08)', mb: 4 }}>
+        <Tabs value={tabValue} onChange={(_, newValue) => setTabValue(newValue)} aria-label="Assets Ledger Tabs">
+          <Tab label="Tokens" sx={{ fontWeight: 700 }} />
+          <Tab label="NFTs Collections" sx={{ fontWeight: 700 }} />
+          <Tab label="Transactions History" sx={{ fontWeight: 700 }} />
         </Tabs>
       </Box>
 
       {/* Tokens Tab */}
       {tabValue === 0 && (
-        <>
+        <Box>
           {loading ? (
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
               {[1, 2, 3].map((item) => (
                 <Grid item xs={12} md={6} lg={4} key={item}>
-                  <Card>
-                    <CardContent>
-                      <Skeleton variant="circular" width={40} height={40} />
-                      <Skeleton variant="text" width="60%" height={32} sx={{ mt: 1 }} />
-                      <Skeleton variant="text" width="80%" />
-                    </CardContent>
+                  <Card sx={{ p: 4 }}>
+                    <Skeleton variant="circular" width={40} height={40} />
+                    <Skeleton variant="text" width="60%" height={32} sx={{ mt: 2 }} />
+                    <Skeleton variant="text" width="80%" />
                   </Card>
                 </Grid>
               ))}
             </Grid>
+          ) : tokens.length === 0 ? (
+            <Card sx={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(13,18,38,0.2)' }}>
+              <CardContent sx={{ textAlign: 'center', py: 8 }}>
+                <TokenIcon sx={{ fontSize: 72, color: 'text.secondary', mb: 2, opacity: 0.6 }} />
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>No Custom Tokens Minted</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                  Mint custom ERC-20 token specifications on active subnets to display balances.
+                </Typography>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={() => setCreateAssetModalOpen(true)}>
+                  Mint Custom Token
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
               {tokens.map((token) => (
                 <Grid item xs={12} md={6} lg={4} key={token.id}>
-                  <Card
-                    sx={{
-                      background: `linear-gradient(135deg, 
-                        ${alpha(theme.palette.background.paper, 0.95)} 0%, 
-                        ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                      backdropFilter: 'blur(20px)',
-                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: theme.shadows[8],
-                      },
-                    }}
-                  >
-                    <CardContent>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                        <Avatar
-                          sx={{
-                            bgcolor: theme.palette.primary.main,
-                            mr: 2,
-                          }}
-                        >
-                          <TokenIcon />
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Typography variant="h6" gutterBottom>
-                            {token.name}
-                          </Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {token.symbol}
-                          </Typography>
+                  <Card className="glass-card-hover" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <CardContent sx={{ p: 4, flexGrow: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Avatar sx={{ bgcolor: 'rgba(0, 242, 254, 0.08)', color: '#00F2FE' }}>
+                            <TokenIcon />
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff' }}>
+                              {token.name}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {token.symbol}
+                            </Typography>
+                          </Box>
                         </Box>
-                        <IconButton
-                          onClick={(e) => handleActionMenuClick(e, token)}
-                        >
+                        <IconButton onClick={(e) => handleActionMenuClick(e, token)}>
                           <MoreVertIcon />
                         </IconButton>
                       </Box>
 
-                      <Box sx={{ mb: 2 }}>
-                        <Typography variant="h5" sx={{ fontWeight: 600 }}>
-                          {token.total_supply} {token.symbol}
+                      <Box sx={{ mb: 3 }}>
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Minted Supply Balance
                         </Typography>
-                        <Typography variant="body1" color="text.secondary">
-                          Total Supply
+                        <Typography variant="h5" sx={{ fontWeight: 800, color: '#fff', mt: 0.5 }}>
+                          {token.total_supply} {token.symbol}
                         </Typography>
                       </Box>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <Chip
-                          label={`Subnet ${token.subnet_id}`}
+                          label={`Subnet: ${token.subnet_id}`}
                           size="small"
-                          variant="outlined"
+                          sx={{
+                            height: 20,
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            background: 'rgba(255,255,255,0.06)',
+                            color: 'text.secondary',
+                          }}
                         />
-                        <Typography variant="body2" color="text.secondary">
-                          {token.decimals} decimals
+                        <Typography variant="caption" color="text.secondary">
+                          {token.decimals} Decimals
                         </Typography>
                       </Box>
                     </CardContent>
 
-                    <CardActions>
+                    <CardActions sx={{ px: 4, pb: 4, pt: 0, gap: 1.5 }}>
                       <Button
                         size="small"
+                        variant="outlined"
                         startIcon={<SendIcon />}
                         onClick={() => {
                           setSendForm(prev => ({ ...prev, asset: token.symbol }));
                           setSendModalOpen(true);
                         }}
+                        sx={{ flex: 1 }}
                       >
                         Send
                       </Button>
                       <Button
                         size="small"
+                        variant="outlined"
                         startIcon={<SwapIcon />}
                         onClick={() => setSwapModalOpen(true)}
+                        sx={{ flex: 1 }}
                       >
                         Swap
                       </Button>
@@ -461,35 +451,32 @@ const Assets: React.FC = () => {
               ))}
             </Grid>
           )}
-        </>
+        </Box>
       )}
 
       {/* NFTs Tab */}
       {tabValue === 1 && (
-        <>
+        <Box>
           {loading ? (
-            <Grid container spacing={3}>
-              {[1, 2, 3].map((item) => (
+            <Grid container spacing={4}>
+              {[1, 2, 3, 4].map((item) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={item}>
                   <Card>
-                    <Skeleton variant="rectangular" width="100%" height={200} />
-                    <CardContent>
+                    <Skeleton variant="rectangular" width="100%" height={160} />
+                    <CardContent sx={{ p: 3 }}>
                       <Skeleton variant="text" width="80%" />
-                      <Skeleton variant="text" width="60%" />
                     </CardContent>
                   </Card>
                 </Grid>
               ))}
             </Grid>
           ) : nfts.length === 0 ? (
-            <Card>
+            <Card sx={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(13,18,38,0.2)' }}>
               <CardContent sx={{ textAlign: 'center', py: 8 }}>
-                <NFTIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-                <Typography variant="h5" gutterBottom>
-                  No NFTs Yet
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-                  Your NFT collection will appear here
+                <NFTIcon sx={{ fontSize: 72, color: 'text.secondary', mb: 2, opacity: 0.6 }} />
+                <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>No NFT Collections Found</Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+                  Compile and deploy an ERC-721 smart contract to list collectable nft collections here.
                 </Typography>
                 <Button
                   variant="contained"
@@ -504,49 +491,38 @@ const Assets: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <Grid container spacing={3}>
+            <Grid container spacing={4}>
               {nfts.map((nft) => (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={nft.id}>
-                  <Card
-                    sx={{
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: theme.shadows[8],
-                      },
-                    }}
-                  >
+                  <Card className="glass-card-hover" sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
                     <Box
-                      component="div"
                       sx={{
-                        height: 200,
+                        height: 160,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        backgroundColor: 'action.hover',
+                        background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(0,242,254,0.05) 100%)',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)'
                       }}
                     >
-                      <DiamondIcon sx={{ fontSize: 80, color: 'text.secondary' }} />
+                      <DiamondIcon sx={{ fontSize: 64, color: '#8B5CF6', opacity: 0.8 }} />
                     </Box>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom noWrap>
+                    <CardContent sx={{ p: 3, flexGrow: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#fff', mb: 0.5 }} noWrap>
                         {nft.name}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                        {nft.symbol}
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                        Symbol: {nft.symbol} • Subnet {nft.subnet_id}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Subnet {nft.subnet_id}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mt: 1 }}>
-                        Supply: {nft.total_supply}
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Supply: {nft.total_supply} Items
                       </Typography>
                     </CardContent>
-                    <CardActions>
-                      <Button size="small" startIcon={<ViewIcon />}>
+                    <CardActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
+                      <Button size="small" variant="outlined" startIcon={<ViewIcon />} sx={{ flex: 1 }}>
                         View
                       </Button>
-                      <Button size="small" startIcon={<SendIcon />}>
+                      <Button size="small" variant="outlined" startIcon={<SendIcon />} sx={{ flex: 1 }}>
                         Transfer
                       </Button>
                     </CardActions>
@@ -555,55 +531,64 @@ const Assets: React.FC = () => {
               ))}
             </Grid>
           )}
-        </>
+        </Box>
       )}
 
       {/* Transactions Tab */}
       {tabValue === 2 && (
         <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Recent Transactions
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 3, letterSpacing: '-0.01em' }}>
+              Subnet Ledger Activity
             </Typography>
-            <List>
+            <List sx={{ p: 0 }}>
               {transactions.map((tx, index) => (
                 <React.Fragment key={tx.id}>
-                  <ListItem>
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: alpha(getTransactionColor(tx.type), 0.1) }}>
+                  <ListItem sx={{ py: 2, px: 0 }}>
+                    <ListItemAvatar sx={{ minWidth: 56 }}>
+                      <Avatar sx={{ bgcolor: alpha(getTransactionColor(tx.type), 0.08), color: getTransactionColor(tx.type), width: 40, height: 40 }}>
                         {getTransactionIcon(tx.type)}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <Typography variant="body1">
-                            {tx.type.charAt(0).toUpperCase() + tx.type.slice(1)} {tx.amount} {tx.asset}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Typography variant="subtitle2" fontWeight={700}>
+                            {tx.type.toUpperCase()} {tx.amount} {tx.asset}
                           </Typography>
                           <Chip
                             label={tx.status}
                             size="small"
-                            color={tx.status === 'confirmed' ? 'success' : tx.status === 'pending' ? 'warning' : 'error'}
+                            sx={{
+                              height: 18,
+                              fontSize: '0.64rem',
+                              fontWeight: 700,
+                              background: tx.status === 'confirmed'
+                                ? 'rgba(16,185,129,0.1)'
+                                : 'rgba(245,158,11,0.1)',
+                              color: tx.status === 'confirmed' ? '#10B981' : '#F59E0B',
+                              border: `1px solid ${tx.status === 'confirmed' ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}`,
+                              textTransform: 'uppercase'
+                            }}
                           />
                         </Box>
                       }
                       secondary={
-                        <Box>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, flexWrap: 'wrap' }}>
                           <Typography variant="caption" color="text.secondary">
-                            {tx.timestamp}
+                            Time: {tx.timestamp}
                           </Typography>
-                          <br />
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ fontFamily: 'var(--font-mono)', color: 'rgba(255,255,255,0.45)' }}>
                             Hash: {tx.txHash}
                           </Typography>
                         </Box>
                       }
                     />
-                    <IconButton>
-                      <ViewIcon />
+                    <IconButton size="small" sx={{ ml: 2 }}>
+                      <ViewIcon fontSize="small" />
                     </IconButton>
                   </ListItem>
-                  {index < transactions.length - 1 && <Divider />}
+                  {index < transactions.length - 1 && <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />}
                 </React.Fragment>
               ))}
             </List>
@@ -616,6 +601,12 @@ const Assets: React.FC = () => {
         anchorEl={actionMenuAnchor}
         open={Boolean(actionMenuAnchor)}
         onClose={handleActionMenuClose}
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
         <MenuItem onClick={() => {
           if (selectedAsset && 'symbol' in selectedAsset) {
@@ -624,20 +615,20 @@ const Assets: React.FC = () => {
           }
           handleActionMenuClose();
         }}>
-          <SendIcon sx={{ mr: 1 }} />
-          Send
+          <SendIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Send Asset
         </MenuItem>
         <MenuItem onClick={() => {
           navigator.clipboard.writeText(selectedAsset?.address || '');
           showNotification('Address copied to clipboard', 'success');
           handleActionMenuClose();
         }}>
-          <CopyIcon sx={{ mr: 1 }} />
-          Copy Address
+          <CopyIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Copy Contract Hash
         </MenuItem>
         <MenuItem onClick={handleActionMenuClose}>
-          <ViewIcon sx={{ mr: 1 }} />
-          View Details
+          <ViewIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Explorer Details
         </MenuItem>
       </Menu>
 
@@ -647,16 +638,22 @@ const Assets: React.FC = () => {
         onClose={() => setSendModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
-        <DialogTitle>Send Asset</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Transfer Reserves</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Asset</InputLabel>
+                <InputLabel>Select Token</InputLabel>
                 <Select
                   value={sendForm.asset}
-                  label="Asset"
+                  label="Select Token"
                   onChange={(e) => setSendForm(prev => ({ ...prev, asset: e.target.value }))}
                 >
                   {tokens.map((token) => (
@@ -687,29 +684,30 @@ const Assets: React.FC = () => {
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setSendModalOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleSend} variant="contained">
-            Send
+            Confirm Send
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Floating Action Button */}
-      <Tooltip title="Send Asset">
+      <Tooltip title="Send Transfer">
         <Fab
           color="primary"
           sx={{
             position: 'fixed',
-            bottom: 24,
-            right: 24,
-            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+            bottom: 28,
+            right: 28,
+            background: 'linear-gradient(135deg, #00F2FE 0%, #8B5CF6 100%)',
+            boxShadow: '0 0 20px rgba(0, 242, 254, 0.4)',
           }}
           onClick={() => setSendModalOpen(true)}
         >
-          <SendIcon />
+          <SendIcon sx={{ color: '#03050C', fontWeight: 'bold' }} />
         </Fab>
       </Tooltip>
 
@@ -719,20 +717,26 @@ const Assets: React.FC = () => {
         onClose={() => setCreateAssetModalOpen(false)}
         maxWidth="sm"
         fullWidth
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
-        <DialogTitle>Create New Asset</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Mint Custom Subnet Asset</DialogTitle>
         <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
             <Grid item xs={12}>
               <FormControl fullWidth>
-                <InputLabel>Asset Type</InputLabel>
+                <InputLabel>Asset VM Type</InputLabel>
                 <Select
                   value={createAssetForm.type}
-                  label="Asset Type"
+                  label="Asset VM Type"
                   onChange={(e) => setCreateAssetForm(prev => ({ ...prev, type: e.target.value }))}
                 >
-                  <SelectMenuItem value="token">Token (ERC20)</SelectMenuItem>
-                  <SelectMenuItem value="nft">NFT Collection (ERC721)</SelectMenuItem>
+                  <SelectMenuItem value="token">Token Ledger (ERC-20)</SelectMenuItem>
+                  <SelectMenuItem value="nft">NFT Collection (ERC-721)</SelectMenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -742,22 +746,22 @@ const Assets: React.FC = () => {
                 label="Asset Name"
                 value={createAssetForm.name}
                 onChange={(e) => setCreateAssetForm(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="My Token"
+                placeholder="Custom Token"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Symbol"
+                label="Asset Symbol"
                 value={createAssetForm.symbol}
                 onChange={(e) => setCreateAssetForm(prev => ({ ...prev, symbol: e.target.value.toUpperCase() }))}
-                placeholder="MTK"
+                placeholder="CTK"
               />
             </Grid>
             <Grid item xs={12}>
               <TextField
                 fullWidth
-                label="Subnet ID"
+                label="Subnet ID Target"
                 value={createAssetForm.subnet_id}
                 onChange={(e) => setCreateAssetForm(prev => ({ ...prev, subnet_id: e.target.value }))}
                 placeholder="1"
@@ -777,7 +781,7 @@ const Assets: React.FC = () => {
                 <Grid item xs={6}>
                   <TextField
                     fullWidth
-                    label="Total Supply"
+                    label="Genesis Total Supply"
                     value={createAssetForm.totalSupply}
                     onChange={(e) => setCreateAssetForm(prev => ({ ...prev, totalSupply: e.target.value }))}
                     placeholder="1000000"
@@ -787,12 +791,12 @@ const Assets: React.FC = () => {
             )}
           </Grid>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setCreateAssetModalOpen(false)}>
             Cancel
           </Button>
           <Button onClick={handleCreateAsset} variant="contained">
-            Create {createAssetForm.type.toUpperCase()}
+            Confirm Mint
           </Button>
         </DialogActions>
       </Dialog>

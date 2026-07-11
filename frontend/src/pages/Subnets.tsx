@@ -24,6 +24,7 @@ import {
   useTheme,
   alpha,
   Skeleton,
+  Divider,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -72,7 +73,7 @@ const Subnets: React.FC = () => {
   const theme = useTheme();
   const { showNotification } = useNotification();
   const { lastMessage, isConnected } = useWebSocket();
-  const { isConnected: walletConnected, account, balance } = useEnhancedWallet();
+  const { isConnected: walletConnected, account } = useEnhancedWallet();
   const [subnets, setSubnets] = useState<Subnet[]>([]);
   const [loading, setLoading] = useState(true);
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -82,7 +83,6 @@ const Subnets: React.FC = () => {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [settingsDialogOpen, setSettingsDialogOpen] = useState(false);
 
-  // Fetch subnets from API
   const fetchSubnets = async () => {
     setLoading(true);
     try {
@@ -94,7 +94,6 @@ const Subnets: React.FC = () => {
       const result = await response.json();
       const apiSubnets = result.data || [];
       
-      // Transform API data to match frontend interface
       const transformedSubnets: Subnet[] = apiSubnets.map((subnet: any) => ({
         id: subnet.id,
         name: subnet.name,
@@ -114,24 +113,20 @@ const Subnets: React.FC = () => {
         blocks: Math.floor(Math.random() * 500),
       }));
       
-      // Only show real subnets once they exist
       setSubnets(transformedSubnets);
-      } catch (error) {
-        console.error('Error fetching subnets:', error);
-        showNotification('Failed to fetch subnets', 'error');
-        
-        // On error, just set empty array - let user create real subnets
-        setSubnets([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (error) {
+      console.error('Error fetching subnets:', error);
+      showNotification('Failed to fetch subnets', 'error');
+      setSubnets([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchSubnets();
   }, [showNotification]);
 
-  // Listen for WebSocket updates
   useEffect(() => {
     if (lastMessage) {
       try {
@@ -139,13 +134,11 @@ const Subnets: React.FC = () => {
         
         switch (message.type) {
           case 'subnet_created':
-            // Refresh the list when a new subnet is created
             fetchSubnets();
             showNotification(`Subnet ${message.data?.name || 'Unknown'} created successfully!`, 'success');
             break;
             
           case 'subnet_deployment_completed':
-            // Update subnet status when deployment completes
             setSubnets(prev => prev.map(subnet => 
               subnet.id === message.subnetId 
                 ? { ...subnet, status: 'running' as const, lastActivity: 'Just deployed' }
@@ -155,7 +148,6 @@ const Subnets: React.FC = () => {
             break;
             
           case 'subnet_deployment_failed':
-            // Update subnet status when deployment fails
             setSubnets(prev => prev.map(subnet => 
               subnet.id === message.subnetId 
                 ? { ...subnet, status: 'error' as const, lastActivity: 'Deployment failed' }
@@ -165,7 +157,6 @@ const Subnets: React.FC = () => {
             break;
             
           case 'subnet_updated':
-            // Update subnet data when modified
             if (message.data) {
               setSubnets(prev => prev.map(subnet => 
                 subnet.id === message.data.id ? { ...subnet, ...message.data } : subnet
@@ -174,7 +165,6 @@ const Subnets: React.FC = () => {
             break;
             
           case 'subnet_deleted':
-            // Remove subnet from list when deleted
             setSubnets(prev => prev.filter(subnet => subnet.id !== message.subnetId));
             showNotification('Subnet deleted successfully', 'info');
             break;
@@ -208,7 +198,6 @@ const Subnets: React.FC = () => {
   const handleSaveSettings = (updatedSubnet: Partial<Subnet>) => {
     if (!selectedSubnet) return;
     
-    // Update the subnet in the list
     setSubnets(prev => prev.map(subnet => 
       subnet.id === selectedSubnet.id 
         ? { ...subnet, ...updatedSubnet }
@@ -221,10 +210,8 @@ const Subnets: React.FC = () => {
   const handleStartStop = async (subnet: Subnet) => {
     const action = subnet.status === 'running' ? 'stop' : 'start';
     try {
-      // Replace with actual API call
       showNotification(`${action === 'start' ? 'Starting' : 'Stopping'} subnet "${subnet.name}"...`, 'info');
       
-      // Update local state
       setSubnets(prev => prev.map(s => 
         s.id === subnet.id 
           ? { ...s, status: action === 'start' ? 'running' : 'stopped' }
@@ -247,7 +234,6 @@ const Subnets: React.FC = () => {
     if (!selectedSubnet) return;
     
     try {
-      // Replace with actual API call
       setSubnets(prev => prev.filter(s => s.id !== selectedSubnet.id));
       showNotification(`Subnet "${selectedSubnet.name}" deleted successfully`, 'success');
     } catch (error) {
@@ -261,49 +247,35 @@ const Subnets: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'running': return theme.palette.success.main;
-      case 'stopped': return theme.palette.error.main;
+      case 'stopped': return '#6B7280';
       case 'pending': return theme.palette.warning.main;
       case 'error': return theme.palette.error.main;
-      default: return theme.palette.grey[500];
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'running': return <PlayIcon />;
-      case 'stopped': return <StopIcon />;
-      case 'pending': return <SpeedIcon />;
-      case 'error': return <SecurityIcon />;
-      default: return <CloudIcon />;
+      default: return '#6B7280';
     }
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography
-          variant="h3"
-          sx={{
-            fontWeight: 700,
-            background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
-            backgroundClip: 'text',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            mb: 1,
-          }}
-        >
-          Subnets
+    <Container maxWidth="xl" sx={{ py: 6 }}>
+      {/* Page Header */}
+      <Box sx={{ mb: 5 }}>
+        <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.02em' }}>
+          Subnet Manager
         </Typography>
-        <Box display="flex" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <Typography variant="h6" color="text.secondary">
-              Manage your Avalanche subnets
+        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={2}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Typography variant="body1" color="text.secondary">
+              Configure, provision, and deploy sovereign Avalanche EVM subnet nodes.
             </Typography>
             <Chip
               size="small"
-              label={isConnected ? "Live Updates" : "Offline"}
-              color={isConnected ? "success" : "default"}
+              label={isConnected ? "Live Updates" : "Idle Updates"}
               variant="outlined"
+              sx={{
+                borderColor: isConnected ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.08)',
+                color: isConnected ? '#10B981' : 'text.secondary',
+                fontSize: '0.72rem',
+                fontWeight: 600
+              }}
             />
           </Box>
           <Button
@@ -317,165 +289,155 @@ const Subnets: React.FC = () => {
           </Button>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 3, flexWrap: 'wrap' }}>
           {!walletConnected && (
-            <Alert severity="info" sx={{ flex: 1 }}>
-              Connect your wallet to create and manage subnets
+            <Alert severity="info" variant="outlined" sx={{ flex: 1, borderRadius: 3, py: 0.5 }}>
+              Connect your developer wallet to initiate chain genesis setups.
             </Alert>
           )}
           <Button
             variant="contained"
-            size="large"
             startIcon={<AddIcon />}
             onClick={() => setCreateModalOpen(true)}
-            sx={{
-              background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
-              py: 1.5,
-              px: 4,
-            }}
           >
-            Create New Subnet
+            Deploy New Subnet
           </Button>
         </Box>
       </Box>
 
       {loading ? (
-        <Grid container spacing={3}>
+        <Grid container spacing={4}>
           {[1, 2, 3].map((item) => (
             <Grid item xs={12} md={6} lg={4} key={item}>
               <Card>
-                <CardContent>
+                <CardContent sx={{ p: 4 }}>
                   <Skeleton variant="text" width="60%" height={32} />
                   <Skeleton variant="text" width="80%" />
-                  <Skeleton variant="rectangular" width="100%" height={60} sx={{ mt: 2 }} />
+                  <Skeleton variant="rectangular" width="100%" height={80} sx={{ mt: 2 }} />
                 </CardContent>
               </Card>
             </Grid>
           ))}
         </Grid>
       ) : subnets.length === 0 ? (
-        <Card>
+        <Card sx={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(13,18,38,0.2)' }}>
           <CardContent sx={{ textAlign: 'center', py: 8 }}>
-            <CloudIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h5" gutterBottom>
-              No Subnets Yet
+            <CloudIcon sx={{ fontSize: 80, color: 'text.secondary', mb: 2, opacity: 0.6 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+              No Active Subnets Found
             </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              Create your first subnet to get started with Avalanche development
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: '400px', mx: 'auto' }}>
+              Create your custom subnet configuration using the wizard to initialize node validator services.
             </Typography>
             <Button
               variant="contained"
               startIcon={<AddIcon />}
               onClick={() => setCreateModalOpen(true)}
             >
-              Create Your First Subnet
+              Start Genesis Wizard
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Grid container spacing={3}>
+        <Grid container spacing={4}>
           {subnets.map((subnet) => (
             <Grid item xs={12} md={6} lg={4} key={subnet.id}>
-              <Card
-                sx={{
-                  background: `linear-gradient(135deg, 
-                    ${alpha(theme.palette.background.paper, 0.95)} 0%, 
-                    ${alpha(theme.palette.background.paper, 0.9)} 100%)`,
-                  backdropFilter: 'blur(20px)',
-                  border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: theme.shadows[8],
-                  },
-                }}
-              >
-                <CardContent>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: getStatusColor(subnet.status),
-                        mr: 2,
-                      }}
-                    >
-                      {getStatusIcon(subnet.status)}
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {subnet.name}
-                      </Typography>
-                      <Chip
-                        label={subnet.status}
-                        size="small"
-                        sx={{
-                          bgcolor: alpha(getStatusColor(subnet.status), 0.1),
-                          color: getStatusColor(subnet.status),
-                        }}
-                      />
+              <Card className="glass-card-hover" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent sx={{ p: 4, flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 3 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <span className={`status-dot-pulse ${subnet.status === 'running' ? 'active' : subnet.status}`} />
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+                          {subnet.name}
+                        </Typography>
+                        <Chip
+                          label={subnet.vmType}
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            background: 'rgba(5, 107, 93, 0.08)',
+                            color: '#056B5D',
+                            border: '1px solid rgba(5, 107, 93, 0.15)'
+                          }}
+                        />
+                      </Box>
                     </Box>
-                    <IconButton
-                      onClick={(e) => handleActionMenuClick(e, subnet)}
-                    >
+                    <IconButton onClick={(e) => handleActionMenuClick(e, subnet)}>
                       <MoreVertIcon />
                     </IconButton>
                   </Box>
 
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5, minHeight: 40, lineHeight: 1.6 }}>
                     {subnet.description}
                   </Typography>
 
-                  <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid container spacing={2.5} sx={{ mb: 3, p: 2, background: '#F4F8F5', borderRadius: 3, border: '1px solid #D1DDD6' }}>
                     <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <StorageIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          Chain ID: {subnet.chainId}
-                        </Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <GroupIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          Validators: {subnet.validators}
-                        </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <StorageIcon sx={{ fontSize: 16, color: '#056B5D' }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block">Chain ID</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>{subnet.chainId}</Typography>
+                        </Box>
                       </Box>
                     </Grid>
                     <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <SpeedIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          Block Time: {subnet.blockTime}s
-                        </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <GroupIcon sx={{ fontSize: 16, color: '#056B5D' }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block">Validators</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>{subnet.validators}</Typography>
+                        </Box>
                       </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                        <TrendingUpIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                        <Typography variant="caption" color="text.secondary">
-                          TXs: {subnet.transactions.toLocaleString()}
-                        </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <SpeedIcon sx={{ fontSize: 16, color: '#056B5D' }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block">Block Time</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>{subnet.blockTime}s</Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <TrendingUpIcon sx={{ fontSize: 16, color: '#056B5D' }} />
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" display="block">Total TXs</Typography>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>{subnet.transactions.toLocaleString()}</Typography>
+                        </Box>
                       </Box>
                     </Grid>
                   </Grid>
 
-                  <Typography variant="caption" color="text.secondary">
-                    Last activity: {subnet.lastActivity}
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontStyle: 'italic' }}>
+                    Activity Feed: {subnet.lastActivity}
                   </Typography>
                 </CardContent>
 
-                <CardActions>
+                <CardActions sx={{ px: 4, pb: 4, pt: 0, gap: 1.5 }}>
                   <Button
                     size="small"
+                    variant="outlined"
                     startIcon={<ViewIcon />}
                     onClick={() => {
                       setSelectedSubnet(subnet);
                       setDetailsDialogOpen(true);
                     }}
+                    sx={{ flex: 1 }}
                   >
-                    View Details
+                    Open View
                   </Button>
                   <Button
                     size="small"
+                    variant="contained"
                     startIcon={subnet.status === 'running' ? <StopIcon /> : <PlayIcon />}
                     onClick={() => handleStartStop(subnet)}
-                    color={subnet.status === 'running' ? 'error' : 'success'}
+                    color={subnet.status === 'running' ? 'secondary' : 'primary'}
+                    sx={{ flex: 1 }}
                   >
                     {subnet.status === 'running' ? 'Stop' : 'Start'}
                   </Button>
@@ -487,18 +449,19 @@ const Subnets: React.FC = () => {
       )}
 
       {/* Floating Action Button */}
-      <Tooltip title="Create New Subnet">
+      <Tooltip title="Deploy Subnet Wizard">
         <Fab
           color="primary"
           sx={{
             position: 'fixed',
-            bottom: 24,
-            right: 24,
-            background: 'linear-gradient(135deg, #E84142 0%, #ff6b6b 100%)',
+            bottom: 28,
+            right: 28,
+            background: 'linear-gradient(135deg, #00F2FE 0%, #8B5CF6 100%)',
+            boxShadow: '0 0 20px rgba(0, 242, 254, 0.4)',
           }}
           onClick={() => setCreateModalOpen(true)}
         >
-          <AddIcon />
+          <AddIcon sx={{ color: '#03050C', fontWeight: 'bold' }} />
         </Fab>
       </Tooltip>
 
@@ -507,22 +470,29 @@ const Subnets: React.FC = () => {
         anchorEl={actionMenuAnchor}
         open={Boolean(actionMenuAnchor)}
         onClose={handleActionMenuClose}
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
         <MenuItem onClick={handleViewDetails}>
-          <ViewIcon sx={{ mr: 1 }} />
+          <ViewIcon sx={{ mr: 1.5, fontSize: 18 }} />
           View Details
         </MenuItem>
         <MenuItem onClick={handleEditSettings}>
-          <EditIcon sx={{ mr: 1 }} />
+          <EditIcon sx={{ mr: 1.5, fontSize: 18 }} />
           Edit Settings
         </MenuItem>
         <MenuItem onClick={() => selectedSubnet && handleStartStop(selectedSubnet)}>
-          {selectedSubnet?.status === 'running' ? <StopIcon sx={{ mr: 1 }} /> : <PlayIcon sx={{ mr: 1 }} />}
-          {selectedSubnet?.status === 'running' ? 'Stop' : 'Start'}
+          {selectedSubnet?.status === 'running' ? <StopIcon sx={{ mr: 1.5, fontSize: 18 }} /> : <PlayIcon sx={{ mr: 1.5, fontSize: 18 }} />}
+          {selectedSubnet?.status === 'running' ? 'Stop Node' : 'Start Node'}
         </MenuItem>
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
         <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete
+          <DeleteIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Delete Subnet
         </MenuItem>
       </Menu>
 
@@ -530,86 +500,66 @@ const Subnets: React.FC = () => {
       <Dialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
-        <DialogTitle>Delete Subnet</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 700 }}>Delete Subnet</DialogTitle>
         <DialogContent>
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            This action cannot be undone. All data associated with this subnet will be permanently deleted.
+          <Alert severity="warning" variant="outlined" sx={{ mb: 3, borderRadius: 2 }}>
+            This action cannot be undone. All local configurations will be permanently cleared.
           </Alert>
-          <Typography>
-            Are you sure you want to delete subnet "{selectedSubnet?.name}"?
+          <Typography variant="body2">
+            Confirm deleting subnet configuration: <strong>{selectedSubnet?.name}</strong>?
           </Typography>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setDeleteDialogOpen(false)}>
             Cancel
           </Button>
           <Button onClick={confirmDelete} color="error" variant="contained">
-            Delete
+            Confirm Delete
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Subnet Details Dialog */}
+      {selectedSubnet && (
+        <SubnetDetails
+          open={detailsDialogOpen}
+          onClose={() => {
+            setDetailsDialogOpen(false);
+            setSelectedSubnet(null);
+          }}
+          subnet={selectedSubnet}
+        />
+      )}
+
+      {/* Subnet Settings Dialog */}
+      {selectedSubnet && (
+        <EditSubnetSettings
+          open={settingsDialogOpen}
+          onClose={() => {
+            setSettingsDialogOpen(false);
+            setSelectedSubnet(null);
+          }}
+          subnet={selectedSubnet}
+          onSave={handleSaveSettings}
+        />
+      )}
 
       {/* Create Subnet Modal */}
       <CreateSubnetModal
         open={createModalOpen}
         onClose={() => setCreateModalOpen(false)}
-        onSuccess={(newSubnetData) => {
+        onSuccess={() => {
           setCreateModalOpen(false);
+          fetchSubnets();
           showNotification('Subnet created successfully!', 'success');
-          
-          // Add the new subnet to the list immediately for instant feedback
-          if (newSubnetData?.data) {
-            const newSubnet: Subnet = {
-              id: newSubnetData.data.id,
-              name: newSubnetData.data.name,
-              description: newSubnetData.data.description || 'No description provided',
-              chainId: newSubnetData.data.chainId,
-              vmType: newSubnetData.data.vmType || 'EVM',
-              status: 'pending',
-              network: newSubnetData.data.deployment?.target || 'local',
-              validators: newSubnetData.data.config?.validators?.minValidators || 1,
-              blockTime: 2,
-              gasLimit: 8000000,
-              tokenSymbol: newSubnetData.data.config?.token?.symbol || 'TOKEN',
-              tokenName: newSubnetData.data.config?.token?.name || 'Custom Token',
-              createdAt: new Date().toLocaleDateString(),
-              lastActivity: 'Just created',
-              transactions: 0,
-              blocks: 0,
-            };
-            
-            setSubnets(prev => [newSubnet, ...prev]);
-          } else {
-            // Fallback to refreshing the list
-            fetchSubnets();
-          }
         }}
-      />
-
-      {/* Subnet Details Modal */}
-      <SubnetDetails
-        open={detailsDialogOpen}
-        subnet={selectedSubnet}
-        onClose={() => {
-          setDetailsDialogOpen(false);
-          setSelectedSubnet(null);
-        }}
-        onEdit={() => {
-          setDetailsDialogOpen(false);
-          setSettingsDialogOpen(true);
-        }}
-      />
-
-      {/* Edit Subnet Settings Modal */}
-      <EditSubnetSettings
-        open={settingsDialogOpen}
-        subnet={selectedSubnet}
-        onClose={() => {
-          setSettingsDialogOpen(false);
-          setSelectedSubnet(null);
-        }}
-        onSave={handleSaveSettings}
       />
     </Container>
   );

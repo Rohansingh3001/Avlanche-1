@@ -26,7 +26,6 @@ import {
   Delete as DeleteIcon,
   MoreVert as MoreIcon,
   Description as TemplateIcon,
-  Folder as FolderIcon,
 } from '@mui/icons-material';
 import { useNotification } from '../components/NotificationProvider';
 import SolidityEditor from '../components/SolidityEditor';
@@ -155,13 +154,11 @@ const Contracts: React.FC = () => {
     try {
       setLoading(true);
       
-      // Compile the contract
       const compileResult: any = await apiService.compileContract({
         sourceCode: contract.source_code,
         contractName: contract.name,
       });
       
-      // Update contract with compilation results
       if (compileResult.data.contracts && Object.keys(compileResult.data.contracts).length > 0) {
         const compiledContract = Object.values(compileResult.data.contracts)[0] as any;
         
@@ -184,58 +181,48 @@ const Contracts: React.FC = () => {
   };
 
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box
-        sx={{
-          background: `linear-gradient(135deg, 
-            ${alpha(theme.palette.primary.main, 0.1)} 0%, 
-            ${alpha(theme.palette.secondary.main, 0.1)} 100%)`,
-          borderRadius: 2,
-          p: 4,
-          mb: 4,
-        }}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
-              Smart Contracts
-            </Typography>
-            <Typography variant="body1" color="text.secondary">
-              Develop, compile, and deploy Solidity smart contracts on Avalanche subnets
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button
-              variant="outlined"
-              startIcon={<TemplateIcon />}
-              onClick={() => setTemplatesModalOpen(true)}
-              size="large"
-            >
-              Templates
-            </Button>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleCreateNew}
-              size="large"
-            >
-              New Contract
-            </Button>
-          </Box>
+    <Container maxWidth="xl" sx={{ py: 6 }}>
+      {/* Header Panel */}
+      <Box sx={{ mb: 5, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 3 }}>
+        <Box>
+          <Typography variant="h3" component="h1" sx={{ fontWeight: 800, mb: 1, letterSpacing: '-0.02em' }}>
+            Smart Contracts Hub
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            Draft, compile, deploy and test Solidity smart contracts on active EVM subnetworks.
+          </Typography>
         </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<TemplateIcon />}
+            onClick={() => setTemplatesModalOpen(true)}
+          >
+            Templates
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateNew}
+          >
+            Create New
+          </Button>
+        </Box>
+      </Box>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : contracts.length === 0 ? (
-          <Paper sx={{ p: 8, textAlign: 'center' }}>
-            <CodeIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" gutterBottom>
-              No contracts yet
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}>
+          <CircularProgress />
+        </Box>
+      ) : contracts.length === 0 ? (
+        <Card sx={{ borderStyle: 'dashed', borderWidth: '1px', borderColor: 'rgba(255,255,255,0.15)', background: 'rgba(13,18,38,0.2)' }}>
+          <CardContent sx={{ textAlign: 'center', py: 8 }}>
+            <CodeIcon sx={{ fontSize: 72, color: 'text.secondary', mb: 2, opacity: 0.6 }} />
+            <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+              No Smart Contracts Found
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Create your first smart contract or start from a template
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4, maxWidth: '400px', mx: 'auto' }}>
+              Create a blank smart contract editor canvas or load one of our predefined Solidity templates.
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
               <Button
@@ -250,162 +237,178 @@ const Contracts: React.FC = () => {
                 startIcon={<AddIcon />}
                 onClick={handleCreateNew}
               >
-                Create Contract
+                Compile Blank Contract
               </Button>
             </Box>
-          </Paper>
-        ) : (
-          <Grid container spacing={3}>
-            {contracts.map((contract) => (
-              <Grid item xs={12} md={6} lg={4} key={contract.id}>
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: theme.shadows[8],
-                    },
-                  }}
-                >
-                  <CardContent sx={{ flex: 1 }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="h6" gutterBottom>
-                        {contract.name}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Chip 
-                          label={contract.status.charAt(0).toUpperCase() + contract.status.slice(1)} 
-                          color={
-                            contract.status === 'deployed' ? 'success' :
-                            contract.status === 'compiled' ? 'info' :
-                            contract.status === 'failed' ? 'error' : 'default'
-                          }
-                          size="small" 
-                        />
-                        <IconButton
-                          size="small"
-                          onClick={(e) => handleOpenMenu(e, contract)}
-                        >
-                          <MoreIcon />
-                        </IconButton>
-                      </Box>
-                    </Box>                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Status: {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+          </CardContent>
+        </Card>
+      ) : (
+        <Grid container spacing={4}>
+          {contracts.map((contract) => (
+            <Grid item xs={12} md={6} lg={4} key={contract.id}>
+              <Card className="glass-card-hover" sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                <CardContent sx={{ p: 4, flexGrow: 1 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: '#ffffff' }}>
+                      {contract.name}
                     </Typography>
-                    
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                      Created: {new Date(contract.created_at).toLocaleDateString()}
-                    </Typography>
-                    
-                    {contract.address && (
-                      <>
-                        <Divider sx={{ my: 2 }} />
-                        <Typography variant="body2" sx={{ mb: 1 }}>
-                          <strong>Address:</strong>
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontFamily: 'monospace',
-                            fontSize: '0.75rem',
-                            color: 'primary.main',
-                            bgcolor: 'action.hover',
-                            p: 1,
-                            borderRadius: 1,
-                            wordBreak: 'break-all',
-                            mb: 1,
-                          }}
-                        >
-                          {contract.address}
-                        </Typography>
-                        {contract.subnet_id && (
-                          <Typography variant="body2" color="text.secondary">
-                            Subnet ID: {contract.subnet_id}
-                          </Typography>
-                        )}
-                      </>
-                    )}
-                  </CardContent>
-                  
-                  <Box sx={{ p: 2, pt: 0 }}>
-                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                      <Button
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Chip 
+                        label={contract.status} 
                         size="small"
-                        startIcon={<EditIcon />}
-                        onClick={() => handleEditContract(contract)}
-                      >
-                        Edit
-                      </Button>
-                      {contract.status === 'compiled' && !contract.address && (
-                        <Button
-                          size="small"
-                          startIcon={<DeployIcon />}
-                          color="primary"
-                          onClick={() => handleDeployContract(contract)}
-                        >
-                          Deploy
-                        </Button>
-                      )}
-                      {contract.status === 'uploaded' && (
-                        <Button
-                          size="small"
-                          startIcon={<CodeIcon />}
-                          color="secondary"
-                          onClick={() => handleCompileContract(contract)}
-                        >
-                          Compile
-                        </Button>
-                      )}
-                      {contract.address && contract.abi && (
-                        <Button
-                          size="small"
-                          startIcon={<ViewIcon />}
-                          color="success"
-                          onClick={() => handleInteractContract(contract)}
-                        >
-                          Interact
-                        </Button>
-                      )}
+                        sx={{
+                          height: 20,
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          background: contract.status === 'deployed' 
+                            ? 'rgba(16,185,129,0.1)' 
+                            : contract.status === 'compiled'
+                            ? 'rgba(0,242,254,0.1)'
+                            : contract.status === 'failed'
+                            ? 'rgba(239,68,68,0.1)'
+                            : 'rgba(255,255,255,0.06)',
+                          color: contract.status === 'deployed' 
+                            ? '#10B981' 
+                            : contract.status === 'compiled'
+                            ? '#00F2FE'
+                            : contract.status === 'failed'
+                            ? '#EF4444'
+                            : 'text.secondary',
+                          border: `1px solid ${
+                            contract.status === 'deployed' 
+                            ? 'rgba(16,185,129,0.2)' 
+                            : contract.status === 'compiled'
+                            ? 'rgba(0,242,254,0.2)'
+                            : contract.status === 'failed'
+                            ? 'rgba(239,68,68,0.2)'
+                            : 'rgba(255,255,255,0.1)'
+                          }`,
+                          textTransform: 'uppercase'
+                        }}
+                      />
+                      <IconButton size="small" onClick={(e) => handleOpenMenu(e, contract)}>
+                        <MoreIcon />
+                      </IconButton>
                     </Box>
                   </Box>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-        )}
-      </Box>
+
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                    Created: {new Date(contract.created_at).toLocaleDateString()}
+                  </Typography>
+                  
+                  {contract.address && (
+                    <Box sx={{ mt: 3, p: 2, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 3 }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600, display: 'block', mb: 1 }}>
+                        Contract RPC Address
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '0.74rem',
+                          color: '#00F2FE',
+                          wordBreak: 'break-all',
+                        }}
+                      >
+                        {contract.address}
+                      </Typography>
+                      {contract.subnet_id && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1.5 }}>
+                          Deploy Target: {contract.subnet_id}
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </CardContent>
+                
+                <Box sx={{ p: 4, pt: 0 }}>
+                  <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<EditIcon />}
+                      onClick={() => handleEditContract(contract)}
+                      sx={{ flex: 1 }}
+                    >
+                      Code Edit
+                    </Button>
+                    {contract.status === 'compiled' && !contract.address && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<DeployIcon />}
+                        onClick={() => handleDeployContract(contract)}
+                        sx={{ flex: 1 }}
+                      >
+                        Deploy
+                      </Button>
+                    )}
+                    {contract.status === 'uploaded' && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<CodeIcon />}
+                        onClick={() => handleCompileContract(contract)}
+                        sx={{ flex: 1 }}
+                      >
+                        Compile
+                      </Button>
+                    )}
+                    {contract.address && contract.abi && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        startIcon={<ViewIcon />}
+                        onClick={() => handleInteractContract(contract)}
+                        sx={{ flex: 1 }}
+                      >
+                        Interact
+                      </Button>
+                    )}
+                  </Box>
+                </Box>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      )}
 
       {/* Context Menu */}
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
         onClose={handleCloseMenu}
+        PaperProps={{
+          sx: {
+            background: '#0a0e1a',
+            border: '1px solid rgba(255,255,255,0.08)'
+          }
+        }}
       >
         <MenuItem onClick={() => menuContract && handleEditContract(menuContract)}>
-          <EditIcon sx={{ mr: 1 }} />
+          <EditIcon sx={{ mr: 1.5, fontSize: 18 }} />
           Edit Code
         </MenuItem>
         {menuContract?.status === 'uploaded' && (
           <MenuItem onClick={() => menuContract && handleCompileContract(menuContract)}>
-            <CodeIcon sx={{ mr: 1 }} />
-            Compile Contract
+            <CodeIcon sx={{ mr: 1.5, fontSize: 18 }} />
+            Compile Code
           </MenuItem>
         )}
         {menuContract?.status === 'compiled' && !menuContract?.address && (
           <MenuItem onClick={() => menuContract && handleDeployContract(menuContract)}>
-            <DeployIcon sx={{ mr: 1 }} />
+            <DeployIcon sx={{ mr: 1.5, fontSize: 18 }} />
             Deploy Contract
           </MenuItem>
         )}
         {menuContract?.address && menuContract?.abi && (
           <MenuItem onClick={() => menuContract && handleInteractContract(menuContract)}>
-            <ViewIcon sx={{ mr: 1 }} />
-            Interact
+            <ViewIcon sx={{ mr: 1.5, fontSize: 18 }} />
+            Interact UI
           </MenuItem>
         )}
+        <Divider sx={{ borderColor: 'rgba(255,255,255,0.06)' }} />
         <MenuItem 
           onClick={() => {
             if (menuContract) {
@@ -415,8 +418,8 @@ const Contracts: React.FC = () => {
           }}
           sx={{ color: 'error.main' }}
         >
-          <DeleteIcon sx={{ mr: 1 }} />
-          Delete
+          <DeleteIcon sx={{ mr: 1.5, fontSize: 18 }} />
+          Delete Record
         </MenuItem>
       </Menu>
 
@@ -459,7 +462,7 @@ const Contracts: React.FC = () => {
             address: selectedContract.address,
             abi: selectedContract.abi,
             subnetName: selectedContract.subnet_id || 'Unknown',
-            chainId: 43114, // Default Avalanche mainnet chain ID
+            chainId: 43114,
           }}
         />
       )}

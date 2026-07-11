@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 
+'use strict';
+
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const ora = require('ora');
@@ -8,248 +12,304 @@ const path = require('path');
 const { generateGenesisConfig, generateSubnetConfig, generateDeploymentScript } = require('./utils/configGenerator');
 const { validateSubnetName, validateChainId, validateNetworkSettings } = require('./utils/validators');
 
-console.log(chalk.cyan.bold(`
-╔═══════════════════════════════════════╗
-║       Avalanche Subnet Wizard         ║
-║     Create & Deploy Custom Subnets    ║
-╚═══════════════════════════════════════╝
+// ─── Package Info ────────────────────────────────────────────────────────────
+const pkg = require('./package.json');
+
+// ─── Banner ──────────────────────────────────────────────────────────────────
+function printBanner() {
+    console.log(chalk.cyan.bold(`
+ ╔══════════════════════════════════════════════╗
+ ║  ${chalk.white.bold('⬡  AVALANCHE SUBNET CLI')}  ${chalk.gray(`v${pkg.version}`)}             ║
+ ║  ${chalk.gray('Create & Deploy Custom Subnets with ease')}    ║
+ ╚══════════════════════════════════════════════╝
 `));
+}
 
-async function main() {
-    try {
-        console.log(chalk.green('Welcome to the Avalanche Subnet Creation Wizard!'));
-        console.log(chalk.gray('This wizard will help you create and configure a custom Avalanche subnet.\n'));
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function formatDate(iso) {
+    return new Date(iso).toLocaleString();
+}
 
-        // Step 1: Basic Subnet Information
-        console.log(chalk.yellow('[1/5] Basic Subnet Information'));
-        const basicInfo = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'subnetName',
-                message: 'Enter subnet name:',
-                validate: validateSubnetName,
-                filter: (input) => input.trim().toLowerCase().replace(/\s+/g, '-')
-            },
-            {
-                type: 'input',
-                name: 'description',
-                message: 'Enter subnet description:',
-                default: 'Custom Avalanche subnet'
-            },
-            {
-                type: 'list',
-                name: 'vmType',
-                message: 'Select Virtual Machine type:',
-                choices: [
-                    { name: 'SubnetEVM (Ethereum Compatible)', value: 'SubnetEVM' },
-                    { name: 'SpacesVM (Key-Value Store)', value: 'SpacesVM' },
-                    { name: 'Custom VM', value: 'Custom' }
-                ],
-                default: 'SubnetEVM'
-            }
-        ]);
+// ─── Wizard (create) command ──────────────────────────────────────────────────
+async function runWizard() {
+    printBanner();
+    console.log(chalk.green('Welcome to the Avalanche Subnet Creation Wizard!'));
+    console.log(chalk.gray('This wizard will help you create and configure a custom Avalanche subnet.\n'));
 
-        // Step 2: Network Configuration
-        console.log(chalk.yellow('\n[2/5] Network Configuration'));
-        const networkConfig = await inquirer.prompt([
-            {
-                type: 'input',
-                name: 'chainId',
-                message: 'Enter Chain ID (must be unique):',
-                validate: validateChainId,
-                default: Math.floor(Math.random() * 1000000) + 10000
-            },
-            {
-                type: 'input',
-                name: 'networkId',
-                message: 'Enter Network ID:',
-                default: '1337',
-                validate: (input) => !isNaN(input) && parseInt(input) > 0
-            },
-            {
-                type: 'confirm',
-                name: 'enableGasFeatures',
-                message: 'Enable gas fee features?',
-                default: true
-            }
-        ]);
-
-        // Step 3: Token Configuration (if SubnetEVM)
-        let tokenConfig = {};
-        if (basicInfo.vmType === 'SubnetEVM') {
-            console.log(chalk.yellow('\n[3/5] Native Token Configuration'));
-            tokenConfig = await inquirer.prompt([
-                {
-                    type: 'input',
-                    name: 'tokenName',
-                    message: 'Enter native token name:',
-                    default: `${basicInfo.subnetName.toUpperCase()} Token`
-                },
-                {
-                    type: 'input',
-                    name: 'tokenSymbol',
-                    message: 'Enter token symbol:',
-                    default: basicInfo.subnetName.substring(0, 4).toUpperCase(),
-                    validate: (input) => input.length >= 2 && input.length <= 6
-                },
-                {
-                    type: 'input',
-                    name: 'initialSupply',
-                    message: 'Enter initial token supply:',
-                    default: '1000000',
-                    validate: (input) => !isNaN(input) && parseFloat(input) > 0
-                },
-                {
-                    type: 'input',
-                    name: 'decimals',
-                    message: 'Enter token decimals:',
-                    default: '18',
-                    validate: (input) => !isNaN(input) && parseInt(input) >= 0 && parseInt(input) <= 18
-                }
-            ]);
+    // Step 1: Basic Subnet Information
+    console.log(chalk.yellow.bold('[1/5] Basic Subnet Information'));
+    const basicInfo = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'subnetName',
+            message: 'Enter subnet name:',
+            validate: validateSubnetName,
+            filter: (input) => input.trim().toLowerCase().replace(/\s+/g, '-')
+        },
+        {
+            type: 'input',
+            name: 'description',
+            message: 'Enter subnet description:',
+            default: 'Custom Avalanche subnet'
+        },
+        {
+            type: 'list',
+            name: 'vmType',
+            message: 'Select Virtual Machine type:',
+            choices: [
+                { name: 'SubnetEVM (Ethereum Compatible)', value: 'SubnetEVM' },
+                { name: 'SpacesVM (Key-Value Store)', value: 'SpacesVM' },
+                { name: 'Custom VM', value: 'Custom' }
+            ],
+            default: 'SubnetEVM'
         }
+    ]);
 
-        // Step 4: Validator Configuration
-        console.log(chalk.yellow('\n[4/5] Initial Validator Configuration'));
-        const validatorConfig = await inquirer.prompt([
+    // Step 2: Network Configuration
+    console.log(chalk.yellow.bold('\n[2/5] Network Configuration'));
+    const networkConfig = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'chainId',
+            message: 'Enter Chain ID (must be unique):',
+            validate: validateChainId,
+            default: Math.floor(Math.random() * 1000000) + 10000
+        },
+        {
+            type: 'input',
+            name: 'networkId',
+            message: 'Enter Network ID:',
+            default: '1337',
+            validate: (input) => !isNaN(input) && parseInt(input) > 0
+        },
+        {
+            type: 'confirm',
+            name: 'enableGasFeatures',
+            message: 'Enable gas fee features?',
+            default: true
+        }
+    ]);
+
+    // Step 3: Token Configuration (if SubnetEVM)
+    let tokenConfig = {};
+    if (basicInfo.vmType === 'SubnetEVM') {
+        console.log(chalk.yellow.bold('\n[3/5] Native Token Configuration'));
+        tokenConfig = await inquirer.prompt([
             {
                 type: 'input',
-                name: 'minValidators',
-                message: 'Minimum number of validators:',
-                default: '1',
-                validate: (input) => !isNaN(input) && parseInt(input) > 0
+                name: 'tokenName',
+                message: 'Enter native token name:',
+                default: `${basicInfo.subnetName.toUpperCase()} Token`
             },
             {
                 type: 'input',
-                name: 'maxValidators',
-                message: 'Maximum number of validators:',
-                default: '100',
-                validate: (input) => !isNaN(input) && parseInt(input) > 0
+                name: 'tokenSymbol',
+                message: 'Enter token symbol:',
+                default: basicInfo.subnetName.substring(0, 4).toUpperCase(),
+                validate: (input) => input.length >= 2 && input.length <= 6
             },
             {
                 type: 'input',
-                name: 'minStake',
-                message: 'Minimum stake amount (AVAX):',
-                default: '2000',
+                name: 'initialSupply',
+                message: 'Enter initial token supply:',
+                default: '1000000',
                 validate: (input) => !isNaN(input) && parseFloat(input) > 0
             },
             {
                 type: 'input',
-                name: 'maxStakeDuration',
-                message: 'Maximum stake duration (seconds):',
-                default: '31536000', // 1 year
-                validate: (input) => !isNaN(input) && parseInt(input) > 0
+                name: 'decimals',
+                message: 'Enter token decimals:',
+                default: '18',
+                validate: (input) => !isNaN(input) && parseInt(input) >= 0 && parseInt(input) <= 18
             }
         ]);
+    }
 
-        // Step 5: Deployment Options
-        console.log(chalk.yellow('\n[5/5] Deployment Configuration'));
-        const deploymentConfig = await inquirer.prompt([
-            {
-                type: 'list',
-                name: 'deploymentTarget',
-                message: 'Select deployment target:',
-                choices: [
-                    { name: 'Local Network (for development)', value: 'local' },
-                    { name: 'Fuji Testnet', value: 'fuji' },
-                    { name: 'Mainnet', value: 'mainnet' },
-                    { name: 'Generate configs only', value: 'config-only' }
-                ],
-                default: 'local'
-            },
-            {
-                type: 'confirm',
-                name: 'autoStart',
-                message: 'Auto-start subnet after creation?',
-                default: true,
-                when: (answers) => answers.deploymentTarget !== 'config-only'
-            },
-            {
-                type: 'confirm',
-                name: 'enableMonitoring',
-                message: 'Enable monitoring dashboard?',
-                default: true
-            }
-        ]);
+    // Step 4: Validator Configuration
+    console.log(chalk.yellow.bold('\n[4/5] Initial Validator Configuration'));
+    const validatorConfig = await inquirer.prompt([
+        {
+            type: 'input',
+            name: 'minValidators',
+            message: 'Minimum number of validators:',
+            default: '1',
+            validate: (input) => !isNaN(input) && parseInt(input) > 0
+        },
+        {
+            type: 'input',
+            name: 'maxValidators',
+            message: 'Maximum number of validators:',
+            default: '100',
+            validate: (input) => !isNaN(input) && parseInt(input) > 0
+        },
+        {
+            type: 'input',
+            name: 'minStake',
+            message: 'Minimum stake amount (AVAX):',
+            default: '2000',
+            validate: (input) => !isNaN(input) && parseFloat(input) > 0
+        },
+        {
+            type: 'input',
+            name: 'maxStakeDuration',
+            message: 'Maximum stake duration (seconds):',
+            default: '31536000', // 1 year
+            validate: (input) => !isNaN(input) && parseInt(input) > 0
+        }
+    ]);
 
-        // Compile all configuration
-        const config = {
-            basic: basicInfo,
-            network: networkConfig,
-            token: tokenConfig,
-            validator: validatorConfig,
-            deployment: deploymentConfig,
-            timestamp: new Date().toISOString()
-        };
+    // Step 5: Deployment Options
+    console.log(chalk.yellow.bold('\n[5/5] Deployment Configuration'));
+    const deploymentConfig = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'deploymentTarget',
+            message: 'Select deployment target:',
+            choices: [
+                { name: 'Local Network (for development)', value: 'local' },
+                { name: 'Fuji Testnet', value: 'fuji' },
+                { name: 'Mainnet', value: 'mainnet' },
+                { name: 'Generate configs only', value: 'config-only' }
+            ],
+            default: 'local'
+        },
+        {
+            type: 'confirm',
+            name: 'autoStart',
+            message: 'Auto-start subnet after creation?',
+            default: true,
+            when: (answers) => answers.deploymentTarget !== 'config-only'
+        },
+        {
+            type: 'confirm',
+            name: 'enableMonitoring',
+            message: 'Enable monitoring dashboard?',
+            default: true
+        }
+    ]);
 
-        // Generate configuration files
-        const spinner = ora('Generating subnet configuration files...').start();
+    // Compile all configuration
+    const config = {
+        basic: basicInfo,
+        network: networkConfig,
+        token: tokenConfig,
+        validator: validatorConfig,
+        deployment: deploymentConfig,
+        timestamp: new Date().toISOString()
+    };
 
-        try {
-            const outputDir = path.join(process.cwd(), 'subnets', config.basic.subnetName);
-            await fs.ensureDir(outputDir);
+    // Generate configuration files
+    const spinner = ora('Generating subnet configuration files...').start();
 
-            // Generate genesis.json
-            const genesisConfig = generateGenesisConfig(config);
-            await fs.writeJSON(path.join(outputDir, 'genesis.json'), genesisConfig, { spaces: 2 });
+    try {
+        const outputDir = path.join(process.cwd(), 'subnets', config.basic.subnetName);
+        await fs.ensureDir(outputDir);
 
-            // Generate subnet-config.json
-            const subnetConfig = generateSubnetConfig(config);
-            await fs.writeJSON(path.join(outputDir, 'subnet-config.json'), subnetConfig, { spaces: 2 });
+        // Generate genesis.json
+        const genesisConfig = generateGenesisConfig(config);
+        await fs.writeJSON(path.join(outputDir, 'genesis.json'), genesisConfig, { spaces: 2 });
 
-            // Generate deployment script
-            const deploymentScript = generateDeploymentScript(config);
-            await fs.writeFile(path.join(outputDir, 'deploy.sh'), deploymentScript);
+        // Generate subnet-config.json
+        const subnetConfig = generateSubnetConfig(config);
+        await fs.writeJSON(path.join(outputDir, 'subnet-config.json'), subnetConfig, { spaces: 2 });
 
-            // Make deployment script executable
-            await fs.chmod(path.join(outputDir, 'deploy.sh'), '755');
+        // Generate deployment script
+        const deploymentScript = generateDeploymentScript(config);
+        await fs.writeFile(path.join(outputDir, 'deploy.sh'), deploymentScript);
 
-            // Generate README for the subnet
-            const readmeContent = generateSubnetReadme(config);
-            await fs.writeFile(path.join(outputDir, 'README.md'), readmeContent);
+        // Make deployment script executable
+        await fs.chmod(path.join(outputDir, 'deploy.sh'), '755');
 
-            spinner.succeed('Configuration files generated successfully!');
+        // Generate README for the subnet
+        const readmeContent = generateSubnetReadme(config);
+        await fs.writeFile(path.join(outputDir, 'README.md'), readmeContent);
 
-            console.log(chalk.green('\n[SUCCESS] Subnet configuration completed!'));
-            console.log(chalk.cyan('\nGenerated files:'));
-            console.log(chalk.gray(`   - ${outputDir}/`));
-            console.log(chalk.gray(`   ├── genesis.json`));
-            console.log(chalk.gray(`   ├── subnet-config.json`));
-            console.log(chalk.gray(`   ├── deploy.sh`));
-            console.log(chalk.gray(`   └── README.md`));
+        spinner.succeed(chalk.green('Configuration files generated successfully!'));
 
-            if (config.deployment.deploymentTarget !== 'config-only') {
-                const shouldDeploy = await inquirer.prompt([
-                    {
-                        type: 'confirm',
-                        name: 'deploy',
-                        message: 'Would you like to deploy the subnet now?',
-                        default: true
-                    }
-                ]);
+        console.log(chalk.cyan('\n📁 Generated files:'));
+        console.log(chalk.gray(`   ${outputDir}/`));
+        console.log(chalk.gray(`   ├── genesis.json`));
+        console.log(chalk.gray(`   ├── subnet-config.json`));
+        console.log(chalk.gray(`   ├── deploy.sh`));
+        console.log(chalk.gray(`   └── README.md`));
 
-                if (shouldDeploy.deploy) {
-                    await deploySubnet(config, outputDir);
+        if (config.deployment.deploymentTarget !== 'config-only') {
+            const shouldDeploy = await inquirer.prompt([
+                {
+                    type: 'confirm',
+                    name: 'deploy',
+                    message: 'Would you like to deploy the subnet now?',
+                    default: true
                 }
+            ]);
+
+            if (shouldDeploy.deploy) {
+                await deploySubnet(config, outputDir);
             }
-
-            console.log(chalk.green('\n[DONE] Subnet wizard completed successfully!'));
-            console.log(chalk.cyan('\nNext steps:'));
-            console.log(chalk.gray(`1. Review configuration in: ${outputDir}`));
-            console.log(chalk.gray(`2. Deploy: bash ${path.join(outputDir, 'deploy.sh')}`));
-            console.log(chalk.gray(`3. Start monitoring: npm run dev`));
-
-        } catch (error) {
-            spinner.fail('Failed to generate configuration files');
-            throw error;
         }
 
+        console.log(chalk.green('\n✅ Subnet wizard completed successfully!'));
+        console.log(chalk.cyan('\n🚀 Next steps:'));
+        console.log(chalk.gray(`  1. Review configuration in: ${outputDir}`));
+        console.log(chalk.gray(`  2. Deploy:   bash ${path.join(outputDir, 'deploy.sh')}`));
+        console.log(chalk.gray(`  3. Monitor:  npm run dev  (opens the web dashboard)`));
+
     } catch (error) {
-        console.error(chalk.red('\n[ERROR]'), error.message);
-        process.exit(1);
+        spinner.fail('Failed to generate configuration files');
+        throw error;
     }
 }
 
+// ─── list command ─────────────────────────────────────────────────────────────
+async function listSubnets() {
+    printBanner();
+    const subnetsDir = path.join(process.cwd(), 'subnets');
+
+    if (!await fs.pathExists(subnetsDir)) {
+        console.log(chalk.yellow('⚠  No subnets directory found. Create your first subnet with:'));
+        console.log(chalk.cyan('   subnet-wizard create\n'));
+        return;
+    }
+
+    const entries = await fs.readdir(subnetsDir);
+    const subnets = [];
+
+    for (const entry of entries) {
+        const configPath = path.join(subnetsDir, entry, 'subnet-config.json');
+        if (await fs.pathExists(configPath)) {
+            try {
+                const cfg = await fs.readJSON(configPath);
+                subnets.push({ name: entry, config: cfg });
+            } catch {
+                subnets.push({ name: entry, config: null });
+            }
+        }
+    }
+
+    if (subnets.length === 0) {
+        console.log(chalk.yellow('⚠  No subnets found in ./subnets/ directory.'));
+        console.log(chalk.cyan('   Run: subnet-wizard create\n'));
+        return;
+    }
+
+    console.log(chalk.cyan.bold(`Found ${subnets.length} subnet(s):\n`));
+    subnets.forEach((s, i) => {
+        const chainId = s.config?.chainId ?? 'unknown';
+        const vmType  = s.config?.vmType  ?? 'unknown';
+        const created = s.config?.created ?? 'unknown';
+        console.log(
+            chalk.white(`  ${i + 1}. `) +
+            chalk.cyan.bold(s.name) +
+            chalk.gray(` — Chain ID: ${chainId} | VM: ${vmType}`)
+        );
+        if (created !== 'unknown') {
+            console.log(chalk.gray(`     Created: ${formatDate(created)}`));
+        }
+    });
+    console.log('');
+}
+
+// ─── Deploy helper ────────────────────────────────────────────────────────────
 async function deploySubnet(config, outputDir) {
     const deploySpinner = ora(`Deploying subnet to ${config.deployment.deploymentTarget}...`).start();
 
@@ -263,27 +323,18 @@ async function deploySubnet(config, outputDir) {
         });
 
         let output = '';
-        deployment.stdout.on('data', (data) => {
-            output += data.toString();
-        });
-
-        deployment.stderr.on('data', (data) => {
-            output += data.toString();
-        });
+        deployment.stdout.on('data', (data) => { output += data.toString(); });
+        deployment.stderr.on('data', (data) => { output += data.toString(); });
 
         deployment.on('close', (code) => {
             if (code === 0) {
                 deploySpinner.succeed('Subnet deployed successfully!');
                 console.log(chalk.green('\nDeployment Details:'));
-
-                // Parse deployment output for important information
-                const lines = output.split('\n');
-                lines.forEach(line => {
+                output.split('\n').forEach(line => {
                     if (line.includes('RPC URL:') || line.includes('Chain ID:') || line.includes('Blockchain ID:')) {
                         console.log(chalk.cyan(`   ${line.trim()}`));
                     }
                 });
-
             } else {
                 deploySpinner.fail('Deployment failed');
                 console.log(chalk.red('Deployment output:'));
@@ -297,6 +348,7 @@ async function deploySubnet(config, outputDir) {
     }
 }
 
+// ─── README generator ────────────────────────────────────────────────────────
 function generateSubnetReadme(config) {
     return `# ${config.basic.subnetName} Subnet
 
@@ -311,8 +363,6 @@ ${config.token.tokenName ? `- **Native Token**: ${config.token.tokenName} (${con
 
 ## Deployment
 
-To deploy this subnet:
-
 \`\`\`bash
 bash deploy.sh
 \`\`\`
@@ -326,9 +376,9 @@ bash deploy.sh
 
 ## Generated Files
 
-- \`genesis.json\` - Genesis configuration
-- \`subnet-config.json\` - Subnet parameters
-- \`deploy.sh\` - Deployment script
+- \`genesis.json\` — Genesis configuration
+- \`subnet-config.json\` — Subnet parameters
+- \`deploy.sh\` — Deployment script
 
 ## Next Steps
 
@@ -341,8 +391,53 @@ Created: ${config.timestamp}
 `;
 }
 
-if (require.main === module) {
-    main();
-}
+// ─── CLI entry point ──────────────────────────────────────────────────────────
+const argv = yargs(hideBin(process.argv))
+    .scriptName('subnet-wizard')
+    .version(pkg.version)
+    .alias('v', 'version')
+    .alias('h', 'help')
+    .usage('$0 <command> [options]')
 
-module.exports = { main };
+    .command(
+        ['create', '$0'],
+        'Launch interactive subnet creation wizard',
+        () => {},
+        async () => {
+            try {
+                await runWizard();
+            } catch (error) {
+                console.error(chalk.red('\n❌ Error:'), error.message);
+                process.exit(1);
+            }
+        }
+    )
+
+    .command(
+        'list',
+        'List all configured subnets in the current directory',
+        () => {},
+        async () => {
+            try {
+                await listSubnets();
+            } catch (error) {
+                console.error(chalk.red('\n❌ Error:'), error.message);
+                process.exit(1);
+            }
+        }
+    )
+
+    .example('$0', 'Start the interactive wizard')
+    .example('$0 create', 'Same as above — create a new subnet')
+    .example('$0 list', 'List all subnets in ./subnets/')
+    .example('$0 --version', 'Show CLI version')
+
+    .epilogue(
+        chalk.gray('Docs: https://github.com/Rohansingh3001/Avlanche-1#readme\n') +
+        chalk.gray('Issues: https://github.com/Rohansingh3001/Avlanche-1/issues')
+    )
+
+    .wrap(Math.min(120, process.stdout.columns || 80))
+    .parse();
+
+module.exports = { runWizard, listSubnets };

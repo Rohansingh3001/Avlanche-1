@@ -1,18 +1,18 @@
 export { };
 
 import React, { Suspense } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { ReactQueryDevtools } from 'react-query/devtools';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box, CircularProgress, AppBar, Toolbar, Typography, Button, Stack } from '@mui/material';
-import { Terrain as TerrainIcon } from '@mui/icons-material';
+import { CssBaseline, Box, CircularProgress } from '@mui/material';
 
 // Contexts
 import { WalletProvider } from './contexts/WalletContext';
 import { EnhancedWalletProvider } from './contexts/EnhancedWalletContext';
 import { WebSocketProvider } from './contexts/WebSocketContext';
 import NotificationProvider from './components/NotificationProvider';
+import Navbar from './components/Navbar';
 
 // Pages (lazy loaded)
 const CleanLandingPage = React.lazy(() => import('./pages/CleanLandingPage'));
@@ -39,49 +39,48 @@ const queryClient = new QueryClient({
   },
 });
 
-// Create Material-UI theme
 const theme = createTheme({
   palette: {
-    mode: 'dark',
+    mode: 'light',
     primary: {
-      main: '#00D4FF',
-      light: '#33DDFF',
-      dark: '#0099CC',
-      contrastText: '#000000',
+      main: '#056B5D', // Deep Forest Teal
+      light: '#0C8B7B',
+      dark: '#024F44',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#FF6B35',
-      light: '#FF8A65',
-      dark: '#E64A19',
+      main: '#0C8B7B', // Vibrant Mint
+      light: '#2BB0A0',
+      dark: '#056B5D',
       contrastText: '#ffffff',
     },
     background: {
-      default: '#0A0E1A',
-      paper: '#1A1F2E',
+      default: '#F4F8F5', // Light Cream/Mint Background
+      paper: '#ffffff', // Card panels
     },
     text: {
-      primary: '#FFFFFF',
-      secondary: '#B8BCC8',
+      primary: '#2C3A33', // Charcoal/Slate
+      secondary: '#5C6E64', // Muted Sage
     },
-    divider: '#2A3142',
+    divider: '#D1DDD6',
     success: {
-      main: '#00E676',
-      light: '#66FFA6',
-      dark: '#00C853',
+      main: '#10B981',
+      light: '#34D399',
+      dark: '#059669',
     },
     warning: {
-      main: '#FFB300',
-      light: '#FFD54F',
-      dark: '#FF8F00',
+      main: '#F59E0B',
+      light: '#FBBF24',
+      dark: '#D97706',
     },
     error: {
-      main: '#FF1744',
-      light: '#FF616F',
-      dark: '#C51162',
+      main: '#EF4444',
+      light: '#F87171',
+      dark: '#DC2626',
     },
   },
   typography: {
-    fontFamily: '"Inter", "SF Pro Display", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Plus Jakarta Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
       fontWeight: 800,
       letterSpacing: '-0.02em',
@@ -91,11 +90,12 @@ const theme = createTheme({
       letterSpacing: '-0.01em',
     },
     h3: {
-      fontWeight: 600,
+      fontWeight: 700,
       letterSpacing: '-0.01em',
     },
     h4: {
       fontWeight: 600,
+      letterSpacing: '-0.01em',
     },
     h5: {
       fontWeight: 600,
@@ -109,20 +109,15 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 16,
   },
   shadows: [
     'none',
-    '0px 2px 4px rgba(0,0,0,0.05)',
-    '0px 4px 8px rgba(0,0,0,0.08)',
-    '0px 8px 16px rgba(0,0,0,0.10)',
-    '0px 12px 24px rgba(0,0,0,0.12)',
-    '0px 16px 32px rgba(0,0,0,0.14)',
-    '0px 20px 40px rgba(0,0,0,0.16)',
-    '0px 24px 48px rgba(0,0,0,0.18)',
-    '0px 28px 56px rgba(0,0,0,0.20)',
-    '0px 32px 64px rgba(0,0,0,0.22)',
-    ...Array(15).fill('0px 32px 64px rgba(0,0,0,0.22)'),
+    '0px 4px 12px rgba(5, 107, 93, 0.04)',
+    '0px 8px 24px rgba(5, 107, 93, 0.06)',
+    '0px 12px 32px rgba(5, 107, 93, 0.08)',
+    '0px 16px 40px rgba(5, 107, 93, 0.1)',
+    ...Array(20).fill('0px 16px 40px rgba(5, 107, 93, 0.1)'),
   ] as any,
   components: {
     MuiButton: {
@@ -131,26 +126,36 @@ const theme = createTheme({
           textTransform: 'none',
           borderRadius: 12,
           fontWeight: 600,
-          padding: '12px 24px',
-          fontSize: '1rem',
+          padding: '10px 20px',
+          fontSize: '0.95rem',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           boxShadow: 'none',
         },
-        contained: {
-          background: 'linear-gradient(45deg, #00D4FF 30%, #FF6B35 90%)',
-          boxShadow: '0 4px 15px rgba(0, 212, 255, 0.3)',
+        containedPrimary: {
+          background: 'linear-gradient(135deg, #056B5D 0%, #0C8B7B 100%)',
+          color: '#ffffff',
           '&:hover': {
-            background: 'linear-gradient(45deg, #33DDFF 30%, #FF8A65 90%)',
-            boxShadow: '0 8px 25px rgba(0, 212, 255, 0.4)',
+            background: 'linear-gradient(135deg, #0C8B7B 0%, #056B5D 100%)',
+            boxShadow: '0 4px 14px rgba(5, 107, 93, 0.25)',
             transform: 'translateY(-2px)',
           },
         },
-        outlined: {
-          borderColor: '#00D4FF',
-          color: '#00D4FF',
+        containedSecondary: {
+          background: 'linear-gradient(135deg, #0C8B7B 0%, #2BB0A0 100%)',
+          color: '#ffffff',
           '&:hover': {
-            backgroundColor: 'rgba(0, 212, 255, 0.1)',
-            borderColor: '#33DDFF',
+            background: 'linear-gradient(135deg, #2BB0A0 0%, #0C8B7B 100%)',
+            boxShadow: '0 4px 14px rgba(12, 139, 123, 0.25)',
+            transform: 'translateY(-2px)',
+          },
+        },
+        outlinedPrimary: {
+          borderColor: '#D1DDD6',
+          color: '#056B5D',
+          '&:hover': {
+            backgroundColor: 'rgba(5, 107, 93, 0.04)',
+            borderColor: '#056B5D',
+            transform: 'translateY(-1px)',
           },
         },
       },
@@ -159,10 +164,9 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          background: 'rgba(26, 31, 46, 0.8)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+          background: '#ffffff',
+          border: '1px solid #D1DDD6',
+          boxShadow: '0 4px 12px rgba(5, 107, 93, 0.03)',
         },
       },
     },
@@ -170,29 +174,24 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 16,
-          background: 'rgba(26, 31, 46, 0.8)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          background: '#ffffff',
+          border: '1px solid #D1DDD6',
         },
       },
     },
     MuiAppBar: {
       styleOverrides: {
         root: {
-          background: 'rgba(10, 14, 26, 0.9)',
-          backdropFilter: 'blur(20px)',
-          border: 'none',
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+          background: '#ffffff',
+          borderBottom: '1px solid #D1DDD6',
+          boxShadow: 'none',
         },
       },
     },
     MuiTypography: {
       styleOverrides: {
         h1: {
-          background: 'linear-gradient(45deg, #00D4FF, #FF6B35)',
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
+          color: '#2C3A33',
         },
       },
     },
@@ -215,51 +214,17 @@ const LoadingFallback: React.FC = () => (
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
 
-  // Hide navigation on landing page
+  // Hide navigation on landing page (it has its own nav)
   if (location.pathname === '/') {
     return <>{children}</>;
   }
 
-  const navigationItems = [
-    { label: 'Home', path: '/' },
-    { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Subnets', path: '/subnets' },
-    { label: 'Contracts', path: '/contracts' },
-    { label: 'Assets', path: '/assets' },
-    { label: 'Monitoring', path: '/monitoring' },
-    { label: 'Faucet', path: '/faucet' },
-    { label: 'CLI Docs', path: '/cli' },
-    { label: 'Wallet', path: '/wallet' },
-    { label: 'Settings', path: '/settings' }
-  ];
-
   return (
-    <Box>
-      <AppBar position="static" sx={{ mb: 2 }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <TerrainIcon /> Avalanche Subnet Tooling Suite
-          </Typography>
-          <Stack direction="row" spacing={2}>
-            {navigationItems.map((item) => (
-              <Button
-                key={item.path}
-                component={Link}
-                to={item.path}
-                color="inherit"
-                variant={location.pathname === item.path ? "outlined" : "text"}
-                sx={{
-                  color: 'white',
-                  borderColor: location.pathname === item.path ? 'white' : 'transparent'
-                }}
-              >
-                {item.label}
-              </Button>
-            ))}
-          </Stack>
-        </Toolbar>
-      </AppBar>
-      {children}
+    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <Navbar />
+      <Box sx={{ flex: 1 }}>
+        {children}
+      </Box>
     </Box>
   );
 };

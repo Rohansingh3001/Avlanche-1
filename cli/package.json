@@ -1,14 +1,17 @@
 {
   "name": "avalanche-subnet-cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Interactive CLI wizard for Avalanche subnet creation and management",
   "main": "subnet-wizard.js",
   "bin": {
-    "subnet-wizard": "./subnet-wizard.js"
+    "subnet-wizard": "subnet-wizard.js"
   },
   "scripts": {
     "start": "node subnet-wizard.js",
-    "test": "jest"
+    "create": "node subnet-wizard.js create",
+    "list": "node subnet-wizard.js list",
+    "test": "jest",
+    "prepublishOnly": "node -e \"console.log('✅ Ready to publish avalanche-subnet-cli v' + require('./package.json').version)\""
   },
   "keywords": [
     "avalanche",
@@ -18,13 +21,15 @@
     "wizard",
     "evm",
     "web3",
-    "cryptocurrency"
+    "cryptocurrency",
+    "fuji",
+    "testnet"
   ],
-  "author": "Rohan Singh",
+  "author": "Rohan Singh <rohansingh3001@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Rohansingh3001/Avlanche-1.git"
+    "url": "git+https://github.com/Rohansingh3001/Avlanche-1.git"
   },
   "homepage": "https://github.com/Rohansingh3001/Avlanche-1#readme",
   "bugs": {
@@ -35,6 +40,9 @@
     "npm": ">=8.0.0"
   },
   "preferGlobal": true,
+  "publishConfig": {
+    "access": "public"
+  },
   "files": [
     "subnet-wizard.js",
     "utils/",

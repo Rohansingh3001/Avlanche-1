@@ -1,0 +1,29 @@
+# Files excluded from npm publish
+
+# Dev dependencies & build artifacts
+node_modules/
+*.tgz
+*.log
+coverage/
+
+# Test files
+__tests__/
+*.test.js
+*.spec.js
+jest.config.js
+
+# Git & CI
+.git/
+.gitignore
+.github/
+.travis.yml
+
+# Local dev configs
+.env
+.env.*
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.cache
