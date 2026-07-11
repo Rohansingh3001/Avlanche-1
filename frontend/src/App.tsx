@@ -25,6 +25,7 @@ const CLIDocumentation = React.lazy(() => import('./pages/CLIDocumentation'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const WalletPage = React.lazy(() => import('./pages/WalletPage'));
 const FaucetPage = React.lazy(() => import('./pages/FaucetPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Create React Query client
@@ -287,7 +288,7 @@ const App: React.FC = () => {
                         <Route path="/faucet" element={<FaucetPage />} />
                         <Route path="/wallet" element={<WalletPage />} />
                         <Route path="/settings" element={<Settings />} />
-                        <Route path="*" element={<ErrorBoundary />} />
+                        <Route path="*" element={<NotFoundPage />} />
                       </Routes>
                     </Suspense>
                   </Layout>
@@ -297,7 +298,7 @@ const App: React.FC = () => {
           </WalletProvider>
         </NotificationProvider>
       </ThemeProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 };

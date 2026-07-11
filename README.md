@@ -82,8 +82,8 @@ Solidity contracts for subnet functionality.
 
 1. **Clone and Setup**
    ```bash
-   git clone <repository-url>
-   cd Avlanche
+   git clone https://github.com/Rohansingh3001/Avlanche-1.git
+   cd Avlanche-1
    npm run setup
    ```
 
@@ -319,10 +319,9 @@ DEBUG=* npm run dev  # Enable verbose logging
 
 ## 📚 Documentation
 
-- [API Documentation](./docs/api.md)
-- [CLI Reference](./docs/cli.md)
-- [Deployment Guide](./docs/deployment.md)
-- [Contract Development](./docs/contracts.md)
+- [CLI Reference](./cli/README.md)
+- [Beginner Guide](./AVALANCHE_SUBNETS_BEGINNER_GUIDE.md)
+- [GitHub Issues](https://github.com/Rohansingh3001/Avlanche-1/issues)
 
 ## 🤝 Contributing
 
@@ -338,9 +337,9 @@ MIT License - see [LICENSE](./LICENSE) file for details.
 
 ## 🆘 Support
 
-- GitHub Issues: Report bugs and request features
-- Documentation: Check the docs/ directory
-- Examples: See examples/ directory
+- [GitHub Issues](https://github.com/Rohansingh3001/Avlanche-1/issues): Report bugs and request features
+- [CLI Reference](./cli/README.md): Complete CLI documentation
+- [Beginner Guide](./AVALANCHE_SUBNETS_BEGINNER_GUIDE.md): Getting started guide
 
 ## 🔗 Resources
 

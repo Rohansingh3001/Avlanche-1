@@ -24,7 +24,7 @@
     "web3",
     "defi"
   ],
-  "author": "Avalanche Subnet Tooling Suite",
+  "author": "Rohan Singh",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^7.6.0"
@@ -35,6 +35,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/avalanche-subnet-tooling"
+    "url": "https://github.com/Rohansingh3001/Avlanche-1.git"
+  },
+  "homepage": "https://github.com/Rohansingh3001/Avlanche-1#readme",
+  "bugs": {
+    "url": "https://github.com/Rohansingh3001/Avlanche-1/issues"
   }
 }
